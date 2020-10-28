@@ -8,7 +8,7 @@ with open('config.json') as json_file:
     config = json.load(json_file)
 
 eng = cityflow.Engine("config.json", thread_num=1)
-num_step = 1000
+num_step = 300
 
 lane_phase_info = parse_roadnet("data/syn_1x1_uniform_200_1h/roadnet.json")
 intersection_id = list(lane_phase_info.keys())[0]
@@ -93,6 +93,12 @@ while t < num_step:
         step(action)
     last_action = action
     t += 1
+
+# evaluate on the fly, why evaluate file? maybe you can put this method in separate file, but why signal plan?
+tt = eng.get_average_travel_time()
+b = 100
+score = (b - tt) / b
+print(score)
 
 df = pd.DataFrame({intersection_id: phase_log[:num_step]})
 if not os.path.exists('data/syn_1x1_uniform_200_1h'):

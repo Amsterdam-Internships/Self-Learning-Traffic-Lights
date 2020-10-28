@@ -36,6 +36,7 @@ def evaluate_one_traffic(dic_sim_setting, scenario):
         print("planFile is invalid, Rejected!")
 
 
+# this can maybe be changed to record travel time during simulation, to avoid doing it twice (not an issue if fast)
 def cal_travel_time(dic_sim_setting, plan_file):
     eng = cityflow.Engine("/Users/sierkkanis/Documents/MscAI/Thesis/Code/Eigen/config.json", thread_num=1)
 
