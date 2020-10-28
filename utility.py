@@ -3,8 +3,8 @@ import argparse
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--scenario", type=str, default="hangzhou_1x1_bc-tyc_18041607_1h")
-    parser.add_argument("--num_step", type=int, default=3600)
+    parser.add_argument("--scenario", type=str, default="syn_1x1_uniform_200_1h")
+    parser.add_argument("--num_step", type=int, default=300)
     return parser.parse_args()
 
 def parse_roadnet(roadnetFile):

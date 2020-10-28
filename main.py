@@ -1,7 +1,13 @@
 import cityflow
 from utility import parse_roadnet
+import pandas as pd
+import os
+import json
 
-eng = cityflow.Engine("/Users/sierkkanis/Documents/MscAI/Thesis/Code/Eigen/config.json", thread_num=1)
+with open('config.json') as json_file:
+    config = json.load(json_file)
+
+eng = cityflow.Engine("config.json", thread_num=1)
 num_step = 1000
 
 lane_phase_info = parse_roadnet("data/syn_1x1_uniform_200_1h/roadnet.json")
@@ -87,4 +93,8 @@ while t < num_step:
         step(action)
     last_action = action
     t += 1
-    # print("Time: {}, Phase: {}, lane_vehicle_count: {}".format(state['current_time'], state['current_phase'], state['lane_vehicle_count']))
+
+df = pd.DataFrame({intersection_id: phase_log[:num_step]})
+if not os.path.exists('data/syn_1x1_uniform_200_1h'):
+    os.makedirs("data/syn_1x1_uniform_200_1h")
+df.to_csv(os.path.join('data/syn_1x1_uniform_200_1h', 'signal_plan_template.txt'), index=None)
