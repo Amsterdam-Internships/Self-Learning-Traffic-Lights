@@ -1,12 +1,11 @@
-##Importing the model (function approximator for Q-table)
-from DQN_model import QNetwork
-
 import numpy as np
 import random
 from collections import namedtuple, deque
 
 import torch
 import torch.optim as optim
+
+from code.dqn_model import QNetwork
 
 BUFFER_SIZE = 2000  # replay buffer size
 BATCH_SIZE = 32  # minibatch size
@@ -18,7 +17,7 @@ UPDATE_EVERY = 5  # how often to update the network
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-class Agent():
+class Agent:
     """Interacts with and learns from environment."""
 
     def __init__(self, state_size, action_size, seed):
@@ -33,7 +32,6 @@ class Agent():
 
         self.state_size = state_size
         self.action_size = action_size
-        self.seed = random.seed(seed)
 
         # Q- Network
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
@@ -42,10 +40,13 @@ class Agent():
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
 
         # Replay memory
-        self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, seed)
+        self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE)
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
 
+        self.loss = 0
+
+    # done is not necessary for TLC
     def step(self, state, action, reward, next_step, done):
         # Save experience in replay memory
         self.memory.add(state, action, reward, next_step, done)
@@ -54,7 +55,6 @@ class Agent():
         self.t_step = (self.t_step + 1) % UPDATE_EVERY
         if self.t_step == 0:
             # If enough samples are available in memory, get random subset and learn
-
             if len(self.memory) > BATCH_SIZE:
                 experience = self.memory.sample()
                 self.learn(experience, GAMMA)
@@ -67,12 +67,13 @@ class Agent():
             eps (float): epsilon, for epsilon-greedy action selection
         """
         state = torch.from_numpy(state).float().unsqueeze(0).to(device)
-        self.qnetwork_local.eval() # TODO what is eval?
+        self.qnetwork_local.eval()
+        # we remove grad because we only want to train from replay, not directly from experience, right?
         with torch.no_grad():
             action_values = self.qnetwork_local(state)
-        self.qnetwork_local.train() # TODO is train a existing method? does local train every step? how?
+        self.qnetwork_local.train()
 
-        # Epsilon -greedy action selction
+        # Epsilon -greedy action selection
         if random.random() > eps:
             return np.argmax(action_values.cpu().data.numpy())
         else:
@@ -86,29 +87,29 @@ class Agent():
             gamma (float): discount factor
         """
         states, actions, rewards, next_state, dones = experiences
-        ## TODO: compute and minimize the loss
+
         criterion = torch.nn.MSELoss()
         self.qnetwork_local.train()
         self.qnetwork_target.eval()
-        # shape of output from the model (batch_size,action_dim) = (64,4)
+        # shape of output from the model (batch_size,action_dim) = (64,8)
         predicted_targets = self.qnetwork_local(states).gather(1, actions)
 
         with torch.no_grad():
-            labels_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
+            # .detach() ->  Returns a new Tensor, detached from the current graph.
+            labels_next = self.qnetwork_target(next_state).detach().max(1)[0].unsqueeze(1)
 
-        # .detach() ->  Returns a new Tensor, detached from the current graph.
         labels = rewards + (gamma * labels_next * (1 - dones))
 
         loss = criterion(predicted_targets, labels).to(device)
+        self.loss = round(loss.item(), 2)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
-        # TODO what is this?
         # ------------------- update target network ------------------- #
-        self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)
+        self.soft_update(TAU)
 
-    def soft_update(self, local_model, target_model, tau):
+    def soft_update(self, tau):
         """Soft update model parameters.
         θ_target = τ*θ_local + (1 - τ)*θ_target
         Params
@@ -117,15 +118,16 @@ class Agent():
             target model (PyTorch model): weights will be copied to
             tau (float): interpolation parameter
         """
-        for target_param, local_param in zip(target_model.parameters(),
-                                             local_model.parameters()):
+        # changed source to add 'self', should not make a difference.
+        for target_param, local_param in zip(self.qnetwork_target.parameters(),
+                                             self.qnetwork_local.parameters()):
             target_param.data.copy_(tau * local_param.data + (1 - tau) * target_param.data)
 
 
 class ReplayBuffer:
     """Fixed -size buffer to store experience tuples."""
 
-    def __init__(self, action_size, buffer_size, batch_size, seed):
+    def __init__(self, action_size, buffer_size, batch_size):
         """Initialize a ReplayBuffer object.
 
         Params
@@ -133,7 +135,6 @@ class ReplayBuffer:
             action_size (int): dimension of each action
             buffer_size (int): maximum size of buffer
             batch_size (int): size of each training batch
-            seed (int): random seed
         """
 
         self.action_size = action_size
@@ -144,7 +145,6 @@ class ReplayBuffer:
                                                                  "reward",
                                                                  "next_state",
                                                                  "done"])
-        self.seed = random.seed(seed)
 
     def add(self, state, action, reward, next_state, done):
         """Add a new experience to memory."""
@@ -163,7 +163,7 @@ class ReplayBuffer:
         dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(
             device)
 
-        return (states, actions, rewards, next_states, dones)
+        return states, actions, rewards, next_states, dones
 
     def __len__(self):
         """Return the current size of internal memory."""

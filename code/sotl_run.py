@@ -1,9 +1,10 @@
-from cityflow_env import CityFlowEnv
-from utility import parse_roadnet
-from utility import parse_arguments
 import json
 
-with open('config.json') as json_file:
+from code.cityflow_env import CityFlowEnv
+from code.utility import parse_roadnet
+from code.utility import parse_arguments
+
+with open('code/config.json') as json_file:
     config = json.load(json_file)
 
 args = parse_arguments()
@@ -48,11 +49,11 @@ def choose_action(state):
             action = cur_phase % len(phase_list) + 1
 
 
-state = env.get_state()
+state = env.get_state_sotl()
 choose_action(state)
 last_action = action
 while t < config['num_step']:
-    state = env.get_state()
+    state = env.get_state_sotl()
     choose_action(state)
     if action == last_action:
         env.step(action)
@@ -69,5 +70,4 @@ while t < config['num_step']:
     last_action = action
     t += 1
 
-# evaluate on the fly, why evaluate file? maybe you can put this method in separate file, but why signal plan?
-print(env.get_score())
+print(env.get_average_travel_time())

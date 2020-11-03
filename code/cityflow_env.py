@@ -1,6 +1,8 @@
-import cityflow
 import pandas as pd
 import os
+import numpy as np
+
+import cityflow
 
 
 class CityFlowEnv:
@@ -8,7 +10,7 @@ class CityFlowEnv:
     Simulator Environment with CityFlow
     """
     def __init__(self, config):
-        self.eng = cityflow.Engine("config.json", thread_num=1)
+        self.eng = cityflow.Engine("code/config.json", thread_num=1)
 
         self.config = config
         self.lane_phase_info = config['lane_phase_info']
@@ -27,6 +29,7 @@ class CityFlowEnv:
     def reset(self):
         self.eng.reset()
         self.phase_log = []
+        return self.get_state()
 
     def step(self, next_phase):
         if self.current_phase == next_phase:
@@ -34,36 +37,37 @@ class CityFlowEnv:
         else:
             self.current_phase = next_phase
             self.current_phase_time = 1
-
         self.eng.set_tl_phase(self.intersection_id, self.current_phase)
         self.eng.next_step()
         self.phase_log.append(self.current_phase)
 
-    def get_state(self):
-        state = {'lane_vehicle_count': self.eng.get_lane_vehicle_count(),
-                 'start_lane_vehicle_count': {lane: self.eng.get_lane_vehicle_count()[lane] for lane in
-                                              self.start_lane},
-                 'lane_waiting_vehicle_count': self.eng.get_lane_waiting_vehicle_count(),
-                 'lane_vehicles': self.eng.get_lane_vehicles(), 'vehicle_speed': self.eng.get_vehicle_speed(),
-                 'vehicle_distance': self.eng.get_vehicle_distance(), 'current_time': self.eng.get_current_time(),
-                 'current_phase': self.current_phase, 'current_phase_time': self.current_phase_time}
+        # environment gives back: next_state, reward, done, _
+        return self.get_state(), self.get_reward(), 0, 'niks'
 
+    def get_state(self):
+        state = {'start_lane_vehicle_count': {lane: self.eng.get_lane_vehicle_count()[lane] for lane in
+                                              self.start_lane},
+                 'current_phase': self.current_phase}
+        state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']])
+        return state
+
+    def get_state_sotl(self):
+        state = {'lane_waiting_vehicle_count': self.eng.get_lane_waiting_vehicle_count(),
+                 'current_phase': self.current_phase,
+                 'current_phase_time': self.current_phase_time}
         return state
 
     def get_reward(self):
-        # a sample reward function which calculates the total of waiting vehicles
-        lane_waiting_vehicle_count = self.eng.get_lane_waiting_vehicle_count()
-        reward = -1 * sum(list(lane_waiting_vehicle_count.values()))
+        # lane_waiting_vehicle_count = self.eng.get_lane_waiting_vehicle_count()
+        # reward = sum(list(lane_waiting_vehicle_count.values()))
+
+        reward = 0
+        if self.current_phase > 7:
+            reward = 10
         return reward
 
     def get_average_travel_time(self):
         return self.eng.get_average_travel_time()
-
-    def get_score(self):
-        tt = self.eng.get_average_travel_time()
-        b = 100
-        score = (b - tt) / b
-        return score
 
     def log(self):
         # self.eng.print_log(self.config['replay_data_path'] + "/replay_roadnet.json",

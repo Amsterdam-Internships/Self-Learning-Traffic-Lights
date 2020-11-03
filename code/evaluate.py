@@ -1,16 +1,16 @@
 import cityflow
-from utility import parse_arguments
+from code.utility import parse_arguments
 import pandas as pd
 import json
 
-with open('config.json') as json_file:
+with open('code/config.json') as json_file:
     config = json.load(json_file)
 
 
 def main():
     args = parse_arguments()
     sim_setting = config
-    sim_setting["num_step"] = args.num_step
+    sim_setting["num_step"] = 300
     evaluate_one_traffic(sim_setting, args.scenario)
 
 
@@ -25,7 +25,7 @@ def evaluate_one_traffic(dic_sim_setting, scenario):
         print("====================== travel time ======================\n")
         # change to baseline of fixed or sotl later. if score is > 1 you approved by that margin,
         # if score is <1 you got worse.
-        b = 100
+        b = 86  # SOTL average travel time
         score = (b - tt)/b
         print("====================== score ======================")
         print("scenario_{0}: {1}".format(scenario, score))
@@ -38,7 +38,7 @@ def evaluate_one_traffic(dic_sim_setting, scenario):
 
 # this can maybe be changed to record travel time during simulation, to avoid doing it twice (not an issue if fast)
 def cal_travel_time(dic_sim_setting, plan_file):
-    eng = cityflow.Engine("/Users/sierkkanis/Documents/MscAI/Thesis/Code/Eigen/config.json", thread_num=1)
+    eng = cityflow.Engine("code/config.json", thread_num=1)
 
     plan = pd.read_csv(plan_file, sep="\t", header=0, dtype=int)
     intersection_id = plan.columns[0]
