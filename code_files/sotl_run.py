@@ -1,10 +1,14 @@
 import json
 
-from code.cityflow_env import CityFlowEnv
-from code.utility import parse_roadnet
-from code.utility import parse_arguments
+from code_files.cityflow_env import CityFlowEnv
+from code_files.utility import parse_roadnet
+from code_files.utility import parse_arguments
 
-with open('code/config.json') as json_file:
+"""
+Source:https://github.com/tianrang-intelligence/TSCC2019
+"""
+
+with open('code_files/config.json') as json_file:
     config = json.load(json_file)
 
 args = parse_arguments()

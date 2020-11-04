@@ -5,7 +5,11 @@ from collections import namedtuple, deque
 import torch
 import torch.optim as optim
 
-from code.dqn_model import QNetwork
+from code_files.dqn_model import QNetwork
+
+"""
+Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
+"""
 
 BUFFER_SIZE = 2000  # replay buffer size
 BATCH_SIZE = 32  # minibatch size

@@ -2,6 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as f
 
+"""
+Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
+"""
+
 
 class QNetwork(nn.Module):
     """ Actor (Policy) Model."""
