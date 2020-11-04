@@ -5,6 +5,11 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 
+"""
+Source: https://github.com/tianrang-intelligence/TSCC2019
+"""
+
+
 class DQNAgent:
     def __init__(self, config):
         self.state_size = config['state_size']

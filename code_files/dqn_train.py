@@ -5,23 +5,21 @@ from collections import deque
 
 import torch
 
-from code.cityflow_env import CityFlowEnv
-from code.dqn_agent import Agent
-from code.utility import parse_roadnet
-from code.utility import parse_arguments
-from code.evaluate import evaluate_one_traffic
+from code_files.cityflow_env import CityFlowEnv
+from code_files.dqn_agent import Agent
+from code_files.utility import parse_roadnet
+from code_files.utility import parse_arguments
+from code_files.evaluate import evaluate_one_traffic
 
 """
-Visualisatie:
-geen oranje licht gevisualiseerd, en auto's starten wel erg snel op, gaan meteen weg als op groen.
-auto's gaan dan nog niet rijden als ze zien dat er wat aankomt.
+Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
 # # add visible gpu if necessary
 # os.environ["CUDA_VISIBLE_DEVICES"] = ''
 
 args = parse_arguments()
-with open('code/config.json') as json_file:
+with open('code_files/config.json') as json_file:
     config = json.load(json_file)
 
 config['num_step'] = 300

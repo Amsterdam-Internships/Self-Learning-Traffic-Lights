@@ -4,13 +4,17 @@ import numpy as np
 
 import cityflow
 
+"""
+Source: https://github.com/tianrang-intelligence/TSCC2019
+"""
+
 
 class CityFlowEnv:
     """
     Simulator Environment with CityFlow
     """
     def __init__(self, config):
-        self.eng = cityflow.Engine("code/config.json", thread_num=1)
+        self.eng = cityflow.Engine("code_files/config.json", thread_num=1)
 
         self.config = config
         self.lane_phase_info = config['lane_phase_info']

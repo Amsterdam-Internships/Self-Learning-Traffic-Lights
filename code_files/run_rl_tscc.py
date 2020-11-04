@@ -1,18 +1,22 @@
-from code.cityflow_env import CityFlowEnv
-from code.dqn_agent_tscc import DQNAgent
-from code.utility import parse_roadnet
+from code_files.cityflow_env import CityFlowEnv
+from code_files.dqn_agent_tscc import DQNAgent
+from code_files.utility import parse_roadnet
 import numpy as np
 import os
-from code.utility import parse_arguments
+from code_files.utility import parse_arguments
 import json
-from code.constants import ROOT_DIR
+from code_files.constants import ROOT_DIR
+
+"""
+Source: https://github.com/tianrang-intelligence/TSCC2019
+"""
 
 if __name__ == "__main__":
 
     os.chdir(ROOT_DIR)
 
     args = parse_arguments()
-    with open('code/config.json') as json_file:
+    with open('code_files/config.json') as json_file:
         config = json.load(json_file)
 
     config['lane_phase_info'] = parse_roadnet("data/{}/roadnettest.json".format(args.scenario))

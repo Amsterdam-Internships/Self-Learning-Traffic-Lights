@@ -1,9 +1,9 @@
 import cityflow
-from code.utility import parse_arguments
+from code_files.utility import parse_arguments
 import pandas as pd
 import json
 
-with open('code/config.json') as json_file:
+with open('code_files/config.json') as json_file:
     config = json.load(json_file)
 
 
@@ -38,7 +38,7 @@ def evaluate_one_traffic(dic_sim_setting, scenario):
 
 # this can maybe be changed to record travel time during simulation, to avoid doing it twice (not an issue if fast)
 def cal_travel_time(dic_sim_setting, plan_file):
-    eng = cityflow.Engine("code/config.json", thread_num=1)
+    eng = cityflow.Engine("code_files/config.json", thread_num=1)
 
     plan = pd.read_csv(plan_file, sep="\t", header=0, dtype=int)
     intersection_id = plan.columns[0]
