@@ -14,7 +14,7 @@ class CityFlowEnv:
     Simulator Environment with CityFlow
     """
     def __init__(self, config):
-        self.eng = cityflow.Engine("code_files/config.json", thread_num=1)
+        self.eng = cityflow.Engine("src/config.json", thread_num=1)
 
         self.config = config
         self.lane_phase_info = config['lane_phase_info']

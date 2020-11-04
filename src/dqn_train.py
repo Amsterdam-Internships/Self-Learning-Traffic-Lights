@@ -5,11 +5,11 @@ from collections import deque
 
 import torch
 
-from code_files.cityflow_env import CityFlowEnv
-from code_files.dqn_agent import Agent
-from code_files.utility import parse_roadnet
-from code_files.utility import parse_arguments
-from code_files.evaluate import evaluate_one_traffic
+from src.cityflow_env import CityFlowEnv
+from src.dqn_agent import Agent
+from src.utility import parse_roadnet
+from src.utility import parse_arguments
+from src.evaluate import evaluate_one_traffic
 
 """
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
@@ -19,7 +19,7 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 # os.environ["CUDA_VISIBLE_DEVICES"] = ''
 
 args = parse_arguments()
-with open('code_files/config.json') as json_file:
+with open('src/config.json') as json_file:
     config = json.load(json_file)
 
 config['num_step'] = 300
