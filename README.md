@@ -50,7 +50,7 @@ pip install .
 To train the reinforcement learning algorithm:
 
 ```
-$ python dqn_train.py
+$ python main.py
 ```
 
 ---
