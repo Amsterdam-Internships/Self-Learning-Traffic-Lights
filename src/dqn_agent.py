@@ -5,7 +5,7 @@ from collections import namedtuple, deque
 import torch
 import torch.optim as optim
 
-from code_files.dqn_model import QNetwork
+from src.dqn_model import QNetwork
 
 """
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
