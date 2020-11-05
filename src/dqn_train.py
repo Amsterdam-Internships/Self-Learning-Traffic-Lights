@@ -52,19 +52,19 @@ def dqn(n_episodes=2, eps_start=1.0, eps_end=0.05, eps_decay=0.5):
     rewards_episodes = []  # list containing cumulative rewards per episode
     # scores_window = deque(maxlen=100)  # last 100 scores
 
-    # evaluation before learning with random actions
-    _, cumulative_reward = run_env(0, 1)
+    # evaluation before learning with epsilon = 1 (random actions)
+    _, cumulative_reward = run_env("eval", 1)
     rewards_episodes.append(cumulative_reward)
 
     eps = eps_start
     for i_episode in range(1, n_episodes + 1):
 
         # training
-        cumulative_loss, _ = run_env(1, eps)
+        cumulative_loss, _ = run_env("train", eps)
         loss_episodes.append(cumulative_loss)
 
         # evaluation
-        _, cumulative_reward = run_env(0, 0)
+        _, cumulative_reward = run_env("eval", 0)
         rewards_episodes.append(cumulative_reward)
 
         # scores_window.append(score)  # save the most recent score
@@ -84,8 +84,8 @@ def dqn(n_episodes=2, eps_start=1.0, eps_end=0.05, eps_decay=0.5):
     return loss_episodes, rewards_episodes
 
 
-def run_env(train, eps):
-    """Run 1 episode through environment
+def run_env(mode, eps):
+    """Run 1 episode through environment.
 
     Params
     ======
@@ -94,7 +94,6 @@ def run_env(train, eps):
     """
 
     state = env.reset()
-
     loss_episode = 0
     cum_rewards = 0
 
@@ -116,26 +115,23 @@ def run_env(train, eps):
                 break
             next_state, reward, done, _ = env.step(action)
 
-        if train:
-            # phase_id starts from 1, yellow light is 0.
+        if mode == "train":
             # add to replay buffer and train
             agent.step(state, action - 1, reward, next_state, done)
-            state = next_state
-
             loss_episode += agent.loss
-        else:
+        if mode == "eval":
             cum_rewards += reward
 
+        state = next_state
         last_action = action
         t += 1
 
     return loss_episode, cum_rewards
 
 
-losses, rewards = dqn(10)
+losses, rewards = dqn(2)
 
-# should be in evaluation loop
-# evaluate and make visualisation more cleanly possible
+# evaluate last run and make ready for cleaner visualisation
 env.log()
 # print(evaluate_one_traffic(config, args.scenario))
 
@@ -154,8 +150,10 @@ plt.ylabel('Cumulative rewards')
 plt.xlabel('After # episodes of learning')
 
 fig.tight_layout()
-save_plots("loss_and_reward")
-plt.show()
+
+# plt.show()
+
+# save_plots("loss_and_reward")
 
 
 
