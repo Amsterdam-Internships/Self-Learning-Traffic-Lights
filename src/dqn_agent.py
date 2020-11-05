@@ -11,9 +11,12 @@ from src.dqn_model import QNetwork
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
+# How much does BUFFER_SIZE matter?
 BUFFER_SIZE = 2000  # replay buffer size
 BATCH_SIZE = 32  # minibatch size
+# TODO tune
 GAMMA = 0.95  # discount factor
+# How much does TAU matter? How to tune?
 TAU = 1e-3  # for soft update of target parameters
 LR = 1e-3  # learning rate
 UPDATE_EVERY = 5  # how often to update the network
@@ -70,15 +73,14 @@ class Agent:
             state (array_like): current state
             eps (float): epsilon, for epsilon-greedy action selection
         """
-        state = torch.from_numpy(state).float().unsqueeze(0).to(device)
-        self.qnetwork_local.eval()
-        # we remove grad because we only want to train from replay, not directly from experience, right?
-        with torch.no_grad():
-            action_values = self.qnetwork_local(state)
-        self.qnetwork_local.train()
-
         # Epsilon -greedy action selection
         if random.random() > eps:
+            state = torch.from_numpy(state).float().unsqueeze(0).to(device)
+            self.qnetwork_local.eval()
+            # we remove grad because we only want to train from replay, not directly from experience, right?
+            with torch.no_grad():
+                action_values = self.qnetwork_local(state)
+            self.qnetwork_local.train()
             return np.argmax(action_values.cpu().data.numpy())
         else:
             return random.choice(np.arange(self.action_size))
@@ -152,8 +154,8 @@ class ReplayBuffer:
 
     def add(self, state, action, reward, next_state, done):
         """Add a new experience to memory."""
-        e = self.experiences(state, action, reward, next_state, done)
-        self.memory.append(e)
+        experience = self.experiences(state, action, reward, next_state, done)
+        self.memory.append(experience)
 
     def sample(self):
         """Randomly sample a batch of experiences from memory"""

@@ -25,7 +25,7 @@ Follow these instructions to set up the environment to run the code.
 
 1) Clone this repository:
     ```bash
-    git clone https://github.com/Amsterdam-Internships/InternshipAmsterdamGeneral
+    git clone https://github.com/Amsterdam-Internships/Self-Learning-Traffic-Lights
     ```
 
 2) Install all dependencies:

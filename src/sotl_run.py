@@ -36,10 +36,6 @@ action = phase_list[0]
 intersection_id = list(lane_phase_info.keys())[0]
 start_lane = lane_phase_info[intersection_id]['start_lane']
 
-# reset initially
-t = 0
-env.reset()
-
 
 def choose_action(state):
     cur_phase = state["current_phase"]
@@ -53,25 +49,31 @@ def choose_action(state):
             action = cur_phase % len(phase_list) + 1
 
 
-state = env.get_state_sotl()
-choose_action(state)
-last_action = action
-while t < config['num_step']:
+def run_sotl():
+    # reset initially
+    t = 0
+    env.reset()
     state = env.get_state_sotl()
     choose_action(state)
-    if action == last_action:
-        env.step(action)
-    else:
-        for _ in range(yellow_time):
-            env.step(0)  # required yellow time
-            t += 1
-            flag = (t >= config['num_step'])
+    last_action = action
+    while t < config['num_step']:
+        state = env.get_state_sotl()
+        choose_action(state)
+        if action == last_action:
+            env.step(action)
+        else:
+            for _ in range(yellow_time):
+                env.step(0)  # required yellow time
+                t += 1
+                flag = (t >= config['num_step'])
+                if flag:
+                    break
             if flag:
                 break
-        if flag:
-            break
-        env.step(action)
-    last_action = action
-    t += 1
+            env.step(action)
+        last_action = action
+        t += 1
 
+
+run_sotl()
 print(env.get_average_travel_time())

@@ -1,11 +1,14 @@
 import json
 import argparse
+import os
+import matplotlib.pyplot as plt
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scenario", type=str, default="syn_1x1_uniform_straight_only")
     parser.add_argument("--num_step", type=int, default=300)
+    parser.add_argument("--exp_name", type=str, default="new_experiment")
     return parser.parse_args()
 
 
@@ -54,3 +57,22 @@ def parse_roadnet(roadnet_file):
             lane_phase_info_dict[intersection['id']]["phase_roadLink_mapping"][phase_i] = lane_pair
 
     return lane_phase_info_dict
+
+
+def save_plots(name):
+    args = parse_arguments()
+    # define the name of the directory to be created
+    path = args.exp_name
+
+    os.chdir("experiments")
+
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
+
+    os.chdir(path)
+    plt.savefig(name)
+    os.chdir("../")
+    os.chdir("../")
