@@ -15,6 +15,7 @@ to subsequently be trained with the newly created data.
 
 1) [`src`](./src): Folder containing all the Python code.
 1) [`data`](./data): Folder containing the different data sets.
+1) [`experiments`](./experiments): Folder containing results of different experiment setups.
 1) [`media`](./media): Folder concerning visualisation of the simulation environment.
 
 ---
