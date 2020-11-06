@@ -12,6 +12,8 @@ from src.utility import *
 from src.evaluate import evaluate_one_traffic
 
 """
+This file contains the training loop for the Deep Reinforcement Learning agent.
+
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 

@@ -3,11 +3,30 @@ Sierk Kanis' master thesis Artificial Intelligence at the University of Amsterda
 
 ![](media/traffic.png)
 
-The aim of this project is to improve the traffic flow of Amsterdam to increase its mobility and decrease its CO2 emission. One way to increase mobility is by decreasing the waiting time of traffic in front of traffic lights. 
+The aim of this project is to improve the traffic flow of Amsterdam to increase its mobility and decrease its CO2 emission. One way to realise this is by decreasing the waiting time of traffic in front of traffic lights. 
 Sensor data can be used to simulate the traffic within a virtual simulation environment (e.g. Simulation of Urban MObility (https://www.eclipse.org/sumo/index.html)),
 by which the configuration of traffic lights can be optimised by Reinforcement Learning techniques. 
 If the performance of the intelligently trained traffic lights surpasses a certain baseline, they can be applied and evaluated in real-life, 
 to subsequently be trained with the newly created data.
+
+---
+
+## In Short
+
+Relevance: Improve traffic flow to improve mobility and CO2 emission.
+
+Idea: Multi agent DRL approach with 1 agent per intersection.
+
+Data: Learn from simulating virtual traffic.
+
+Literature: focused on increasing amount of agents, but no consensus about:
+- Objective: what contains ‘improving traffic flow’?
+- Rewards: what to minimize to obtain objective?
+- State: what traffic input is necessary, without being abundant, to minimize rewards?
+- Actions: How many options can the agent choose from?
+
+Addition to the field: this project will focus on *revising* the current state of Deep Reinforcement Learning (DRL) for smart Traffic Light Control (TLC).
+
 
 ---
 

@@ -5,6 +5,8 @@ from src.utility import parse_roadnet
 from src.utility import parse_arguments
 
 """
+This file contains the rule-based Self-Organising-Traffic-Lights algorithm to be used as a baseline.
+
 Source:https://github.com/tianrang-intelligence/TSCC2019
 """
 

@@ -3,6 +3,12 @@ from src.utility import parse_arguments
 import pandas as pd
 import json
 
+"""
+This file evaluates the chosen actions with the signal_plan_template.txt file.
+
+Source: https://github.com/tianrang-intelligence/TSCC2019
+"""
+
 with open('src/config.json') as json_file:
     config = json.load(json_file)
 

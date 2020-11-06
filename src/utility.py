@@ -3,6 +3,12 @@ import argparse
 import os
 import matplotlib.pyplot as plt
 
+"""
+This file contains various helper methods.
+
+Source: https://github.com/tianrang-intelligence/TSCC2019
+"""
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser()

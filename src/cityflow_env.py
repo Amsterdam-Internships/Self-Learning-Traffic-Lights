@@ -5,13 +5,15 @@ import numpy as np
 import cityflow
 
 """
+This file sets up the CityFlow simulation engine based on the config.json file.
+
 Source: https://github.com/tianrang-intelligence/TSCC2019
 """
 
 
 class CityFlowEnv:
     """
-    Simulator Environment with CityFlow
+    Simulator Environment
     """
     def __init__(self, config):
         self.eng = cityflow.Engine("src/config.json", thread_num=1)

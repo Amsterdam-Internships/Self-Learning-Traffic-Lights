@@ -8,6 +8,8 @@ import torch.optim as optim
 from src.dqn_model import QNetwork
 
 """
+This file contains the Deep Q-leaning agent in PyTorch.
+
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
