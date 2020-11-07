@@ -12,7 +12,7 @@ Source: https://github.com/tianrang-intelligence/TSCC2019
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--scenario", type=str, default="syn_1x1_uniform_straight_only")
+    parser.add_argument("--scenario", type=str, default="new_scenario")
     parser.add_argument("--num_step", type=int, default=300)
     parser.add_argument("--exp_name", type=str, default="new_experiment")
     return parser.parse_args()
@@ -68,9 +68,7 @@ def parse_roadnet(roadnet_file):
 def save_plots(name):
     args = parse_arguments()
     # define the name of the directory to be created
-    path = args.exp_name
-
-    os.chdir("experiments")
+    path = os.path.join("experiments/", args.exp_name)
 
     if not os.path.exists(path):
         try:
@@ -81,4 +79,25 @@ def save_plots(name):
     os.chdir(path)
     plt.savefig(name)
     os.chdir("../")
-    os.chdir("../")
+
+
+def update_config(num_steps):
+    args = parse_arguments()
+
+    # update the config file with arguments
+    with open('src/config.json') as json_file:
+        config = json.load(json_file)
+
+    config["dir"] = "data/{}/".format(args.scenario)
+    # if not os.path.exists(config["dir"]):
+    #     os.makedirs(config["dir"])
+
+    roadnet = config["roadnetFile"]
+    config['lane_phase_info'] = parse_roadnet(os.path.join(config["dir"], roadnet))
+    config['num_step'] = num_steps
+
+    # write to file so the engine can open it.
+    with open('src/config_args.json', 'w') as outfile:
+        json.dump(config, outfile)
+
+    return config

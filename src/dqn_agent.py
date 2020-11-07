@@ -9,6 +9,9 @@ from src.dqn_model import QNetwork
 
 """
 This file contains the Deep Q-leaning agent in PyTorch.
+It can learn by updating the parameters of its neural network by backpropagation,
+by taking samples from the replay memory filled by the training loop in dqn_train.py.
+Soft-updates are used to update the target network every training iteration.
 
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """

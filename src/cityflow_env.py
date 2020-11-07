@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import numpy as np
+import json
 
 import cityflow
 
@@ -16,7 +17,8 @@ class CityFlowEnv:
     Simulator Environment
     """
     def __init__(self, config):
-        self.eng = cityflow.Engine("src/config.json", thread_num=1)
+
+        self.eng = cityflow.Engine("src/config_args.json", thread_num=1)
 
         self.config = config
         self.lane_phase_info = config['lane_phase_info']
@@ -64,12 +66,12 @@ class CityFlowEnv:
         return state
 
     def get_reward(self):
-        # lane_waiting_vehicle_count = self.eng.get_lane_waiting_vehicle_count()
-        # reward = sum(list(lane_waiting_vehicle_count.values()))
+        lane_waiting_vehicle_count = self.eng.get_lane_waiting_vehicle_count()
+        reward = -1 * sum(list(lane_waiting_vehicle_count.values()))
 
-        reward = 0
-        if self.current_phase > 7:
-            reward = 10
+        # reward = 0
+        # if self.current_phase > 7:
+        #     reward = 10
         return reward
 
     def get_average_travel_time(self):

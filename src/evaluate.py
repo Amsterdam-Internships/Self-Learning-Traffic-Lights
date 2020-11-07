@@ -20,31 +20,35 @@ def main():
     evaluate_one_traffic(sim_setting, args.scenario)
 
 
-def evaluate_one_traffic(dic_sim_setting, scenario):
+def evaluate_one_traffic(dic_sim_setting, scenario, printing):
     plan_file = "data/{}/signal_plan_template.txt".format(scenario)
     out_file = "data/{}/evaluation.txt".format(scenario)
 
     if check(plan_file, dic_sim_setting["num_step"]):
         tt = cal_travel_time(dic_sim_setting, plan_file)
-        print("====================== travel time ======================")
-        print("scenario_{0}: {1:.2f} s".format(scenario, tt))
-        print("====================== travel time ======================\n")
-        # change to baseline of fixed or sotl later. if score is > 1 you approved by that margin,
-        # if score is <1 you got worse.
-        b = 86  # SOTL average travel time
-        score = (b - tt)/b
-        print("====================== score ======================")
-        print("scenario_{0}: {1}".format(scenario, score))
-        print("====================== score ======================")
-        with open(out_file, "w") as f:
-            f.write(str(score))
+        if printing:
+            print("====================== travel time ======================")
+            print("scenario_{0}: {1:.2f} s".format(scenario, tt))
+            print("====================== travel time ======================\n")
+
+            # change to baseline of fixed or sotl later. if score is > 0 you approved by that margin,
+            # if score is <0 you got worse.
+            b = 62.36  # SOTL average travel time
+            score = (b - tt)/b
+
+            print("====================== score ======================")
+            print("scenario_{0}: {1}".format(scenario, score))
+            print("====================== score ======================")
+
+            with open(out_file, "w") as f:
+                f.write(str(score))
     else:
         print("planFile is invalid, Rejected!")
 
 
 # this can maybe be changed to record travel time during simulation, to avoid doing it twice (not an issue if fast)
 def cal_travel_time(dic_sim_setting, plan_file):
-    eng = cityflow.Engine("src/config.json", thread_num=1)
+    eng = cityflow.Engine("src/config_args.json", thread_num=1)
 
     plan = pd.read_csv(plan_file, sep="\t", header=0, dtype=int)
     intersection_id = plan.columns[0]
@@ -55,8 +59,8 @@ def cal_travel_time(dic_sim_setting, plan_file):
         eng.next_step()
         current_time = eng.get_current_time()
 
-        if current_time % 100 == 0:
-            print("Time: {} / {}".format(current_time, dic_sim_setting["num_step"]))
+        # if current_time % 100 == 0:
+        #     print("Time: {} / {}".format(current_time, dic_sim_setting["num_step"]))
 
     return eng.get_average_travel_time()
 

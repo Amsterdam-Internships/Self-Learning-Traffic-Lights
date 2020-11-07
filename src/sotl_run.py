@@ -1,8 +1,9 @@
 import json
+import os
 
 from src.cityflow_env import CityFlowEnv
-from src.utility import parse_roadnet
-from src.utility import parse_arguments
+from src.utility import *
+from src.evaluate import *
 
 """
 This file contains the rule-based Self-Organising-Traffic-Lights algorithm to be used as a baseline.
@@ -10,15 +11,10 @@ This file contains the rule-based Self-Organising-Traffic-Lights algorithm to be
 Source:https://github.com/tianrang-intelligence/TSCC2019
 """
 
-with open('src/config.json') as json_file:
-    config = json.load(json_file)
-
 args = parse_arguments()
-dataset = args.scenario
-config['lane_phase_info'] = parse_roadnet("data/{}/roadnet.json".format(dataset))
-config['num_step'] = 300
+num_steps = 300
+config = update_config(num_steps)
 
-# TODO make argparse part of config
 env = CityFlowEnv(config)
 
 lane_phase_info = config['lane_phase_info']
@@ -48,7 +44,9 @@ def choose_action(state):
         num_red_vehicle = sum([state["lane_waiting_vehicle_count"][i] for i in
                                lane_phase_info[intersection_id]["start_lane"]]) - num_green_vehicle
         if num_green_vehicle <= min_green_vehicle and num_red_vehicle > max_red_vehicle:
-            action = cur_phase % len(phase_list) + 1
+            # action = cur_phase % len(phase_list) + 1
+            # SOTL doesn't work if too much freedom of actions it looks like, only with opposite phases.
+            action = cur_phase % 2 + 1
 
 
 def run_sotl():
@@ -78,4 +76,6 @@ def run_sotl():
 
 
 run_sotl()
-print(env.get_average_travel_time())
+# evaluate last run and make ready for cleaner visualisation
+env.log()
+evaluate_one_traffic(config, args.scenario, 1)

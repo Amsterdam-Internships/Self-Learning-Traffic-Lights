@@ -13,24 +13,24 @@ from src.evaluate import evaluate_one_traffic
 
 """
 This file contains the training loop for the Deep Reinforcement Learning agent.
+It constantly refreshes the replay memory by running the simulation engine
+under the current epsilon-greedy policy of the trained agent. 
 
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-# # add visible gpu if necessary
-# os.environ["CUDA_VISIBLE_DEVICES"] = ''
-
 args = parse_arguments()
-with open('src/config.json') as json_file:
-    config = json.load(json_file)
+N_EPISODES = 100
+NUM_STEPS = 300
+config = update_config(NUM_STEPS)
 
-config['num_step'] = 300
-config['lane_phase_info'] = parse_roadnet("data/{}/roadnettest.json".format(args.scenario))
 intersection_id = list(config['lane_phase_info'].keys())[0]
 phase_list = config['lane_phase_info'][intersection_id]['phase']
-
 state_size = len(config['lane_phase_info'][intersection_id]['start_lane']) + 1
 action_size = len(phase_list)
+# to help him (otherwise he has to learn that using only these 2 actions is always better)
+action_size = 2
+print("Action size = ", action_size)
 
 env = CityFlowEnv(config)
 agent = Agent(state_size, action_size, seed=0)
@@ -38,7 +38,7 @@ agent = Agent(state_size, action_size, seed=0)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def dqn(n_episodes=2, eps_start=1.0, eps_end=0.05, eps_decay=0.5):
+def dqn(n_episodes=2, eps_start=1.0, eps_end=0.05, eps_decay=0.995):
     """Deep Q-Learning
 
     Params
@@ -60,7 +60,6 @@ def dqn(n_episodes=2, eps_start=1.0, eps_end=0.05, eps_decay=0.5):
 
     eps = eps_start
     for i_episode in range(1, n_episodes + 1):
-
         # training
         cumulative_loss, _ = run_env("train", eps)
         loss_episodes.append(cumulative_loss)
@@ -72,7 +71,7 @@ def dqn(n_episodes=2, eps_start=1.0, eps_end=0.05, eps_decay=0.5):
         # scores_window.append(score)  # save the most recent score
         eps = max(eps * eps_decay, eps_end)  # decrease  epsilon
 
-        print('\rEpisode {}\tAverage Reward {:.2f}'.format(i_episode, np.mean(rewards_episodes)))  # , end="")
+        print('\rEpisode {}\tCumulative Reward {:.2f}'.format(i_episode, cumulative_reward))  # , end="")
         # print('\rEpisode {}\tAverage travel time {:.2f}'.format(i_episode, env.get_average_travel_time())) #  , end="")
         # if i_episode % 10 == 0:
         #     print('\rEpisode {}\tAverage Reward {:.2f}'.format(i_episode, np.mean(scores_window)))
@@ -131,31 +130,28 @@ def run_env(mode, eps):
     return loss_episode, cum_rewards
 
 
-losses, rewards = dqn(2)
+losses, rewards = dqn(N_EPISODES)
 
 # evaluate last run and make ready for cleaner visualisation
 env.log()
-# print(evaluate_one_traffic(config, args.scenario))
-
+evaluate_one_traffic(config, args.scenario, 1)
 
 # plot losses and rewards
 fig = plt.figure()
+skip = 5
+
 ax = fig.add_subplot(211)
-skip = 0
 plt.plot(np.arange(skip, len(losses)), losses[skip:])
 plt.ylabel('Loss')
 plt.xlabel('Episode #')
 
 fig.add_subplot(212)
-plt.plot(np.arange(len(rewards)), rewards)
+plt.plot(np.arange(skip, len(rewards)), rewards[skip:])
 plt.ylabel('Cumulative rewards')
 plt.xlabel('After # episodes of learning')
 
 fig.tight_layout()
 
+save_plots("loss_and_reward")
+
 # plt.show()
-
-# save_plots("loss_and_reward")
-
-
-

@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as f
 
 """
-This file contains the architecture of the neural network in PyTorch.
+This file sets up the neural network of the DQN agent in PyTorch.
 
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """

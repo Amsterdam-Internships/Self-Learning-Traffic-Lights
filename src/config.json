@@ -1,9 +1,9 @@
 {
 	"interval": 1.0,
 	"seed": 0,
-	"dir": "data/syn_1x1_uniform_straight_only/",
-	"roadnetFile": "roadnettest.json",
-	"flowFile": "flowtest.json",
+	"dir": "data/test/",
+	"roadnetFile": "roadnet.json",
+	"flowFile": "flow.json",
 	"rlTrafficLight": true,
 	"laneChange": false,
 	"saveReplay": true,
