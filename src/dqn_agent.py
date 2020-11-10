@@ -9,7 +9,7 @@ from src.dqn_model import QNetwork
 
 """
 This file contains the Deep Q-leaning agent in PyTorch.
-It can learn by updating the parameters of its neural network by backpropagation,
+It learns by updating the parameters of its neural network by backpropagation,
 by taking samples from the replay memory filled by the training loop in dqn_train.py.
 Soft-updates are used to update the target network every training iteration.
 
@@ -18,12 +18,13 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 
 # How much does BUFFER_SIZE matter?
 BUFFER_SIZE = 2000  # replay buffer size
-BATCH_SIZE = 32  # minibatch size
+BATCH_SIZE = 256  # minibatch size
 # TODO tune
-GAMMA = 0.95  # discount factor
+GAMMA = 0.999  # discount factor
 # How much does TAU matter? How to tune?
 TAU = 1e-3  # for soft update of target parameters
 LR = 1e-3  # learning rate
+LR_decay = 0.95   # learning rate decay
 UPDATE_EVERY = 5  # how often to update the network
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -32,13 +33,14 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class Agent:
     """Interacts with and learns from environment."""
 
-    def __init__(self, state_size, action_size, seed):
+    def __init__(self, state_size, action_size, epochs, seed):
         """Initialize an Agent object.
 
         Params
         =======
             state_size (int): dimension of each state
             action_size (int): dimension of each action
+            epochs (int): amount of epochs to train
             seed (int): random seed
         """
 
@@ -50,6 +52,7 @@ class Agent:
         self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
 
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
+        self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=LR_decay)
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE)
@@ -80,9 +83,9 @@ class Agent:
         """
         # Epsilon -greedy action selection
         if random.random() > eps:
-            state = torch.from_numpy(state).float().unsqueeze(0).to(device)
+            # state = state.unsqueeze(0).to(device)
+            state = torch.from_numpy(state).unsqueeze(0).float().to(device)
             self.qnetwork_local.eval()
-            # we remove grad because we only want to train from replay, not directly from experience, right?
             with torch.no_grad():
                 action_values = self.qnetwork_local(state)
             self.qnetwork_local.train()
@@ -179,3 +182,18 @@ class ReplayBuffer:
     def __len__(self):
         """Return the current size of internal memory."""
         return len(self.memory)
+
+
+class Normalizer:
+    def __init__(self, num_inputs):
+        self.n = np.zeros(num_inputs)
+        self.mean = np.zeros(num_inputs)
+        self.var = np.zeros(num_inputs)
+
+    def normalize(self, x):
+        x = x.astype(np.float)
+        self.n += 1.
+        last_mean = self.mean.copy()
+        self.mean += (x-self.mean)/self.n
+        self.var += np.clip(((x-last_mean)*(x-self.mean) - self.var)/self.n, a_min=1e-2, a_max=None)
+        return (x - self.mean)/np.sqrt(self.var)

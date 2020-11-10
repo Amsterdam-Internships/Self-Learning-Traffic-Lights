@@ -20,13 +20,13 @@ def main():
     evaluate_one_traffic(sim_setting, args.scenario)
 
 
-def evaluate_one_traffic(dic_sim_setting, scenario, printing):
-    plan_file = "data/{}/signal_plan_template.txt".format(scenario)
-    out_file = "data/{}/evaluation.txt".format(scenario)
+def evaluate_one_traffic(dic_sim_setting, scenario, mode='train', printing='no_printing'):
+    plan_file = "data/{}/{}/signal_plan_template.txt".format(scenario, mode)
+    out_file = "data/{}/{}/evaluation.txt".format(scenario, mode)
 
     if check(plan_file, dic_sim_setting["num_step"]):
         tt = cal_travel_time(dic_sim_setting, plan_file)
-        if printing:
+        if printing == 'print':
             print("====================== travel time ======================")
             print("scenario_{0}: {1:.2f} s".format(scenario, tt))
             print("====================== travel time ======================\n")

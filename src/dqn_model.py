@@ -27,15 +27,23 @@ class QNetwork(nn.Module):
         """
         super(QNetwork, self).__init__()  # calls __init__ method of nn.Module class
         self.seed = torch.manual_seed(seed)
+        self.batch_norm0 = nn.BatchNorm1d(state_size)
         self.fc1 = nn.Linear(state_size, fc1_unit)
+        self.batch_norm1 = nn.BatchNorm1d(fc1_unit)
         self.fc2 = nn.Linear(fc1_unit, fc2_unit)
+        self.batch_norm2 = nn.BatchNorm1d(fc2_unit)
         self.fc3 = nn.Linear(fc2_unit, action_size)
 
     def forward(self, x):
-        # x = state
         """
         Build a network that maps state -> action values.
         """
-        x = f.relu(self.fc1(x))
-        x = f.relu(self.fc2(x))
+        # batch norm over x shouldn't make it worse right?
+        # x = self.batch_norm0(x)
+        x = f.relu(self.batch_norm1(self.fc1(x)))
+        x = f.relu(self.batch_norm2(self.fc2(x)))
         return self.fc3(x)
+
+        # x = f.relu(self.fc1(x))
+        # x = f.relu(self.fc2(x))
+        # return self.fc3(x)

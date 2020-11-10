@@ -1,13 +1,10 @@
-import json
 import numpy as np
 import matplotlib.pyplot as plt
-from collections import deque
-import os
 
 import torch
 
 from src.cityflow_env import CityFlowEnv
-from src.dqn_agent import Agent
+from src.dqn_agent import *
 from src.utility import *
 from src.evaluate import evaluate_one_traffic
 
@@ -19,21 +16,28 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-args = parse_arguments()
-N_EPISODES = 100
+EPOCHS = 100
 NUM_STEPS = 300
-config = update_config(NUM_STEPS)
+GOOD_REWARD = -1000
+LR_START = 1e-4
 
+args = parse_arguments()
+config = update_config(NUM_STEPS)
 intersection_id = list(config['lane_phase_info'].keys())[0]
 phase_list = config['lane_phase_info'][intersection_id]['phase']
-state_size = len(config['lane_phase_info'][intersection_id]['start_lane']) + 1
+# state_size = len(config['lane_phase_info'][intersection_id]['start_lane']) + 1
+# current phase not necessary
+state_size = len(config['lane_phase_info'][intersection_id]['start_lane'])
 action_size = len(phase_list)
 # to help him (otherwise he has to learn that using only these 2 actions is always better)
+# TODO make it learn with all actions
 action_size = 2
 print("Action size = ", action_size)
 
 env = CityFlowEnv(config)
-agent = Agent(state_size, action_size, seed=0)
+agent = Agent(state_size, action_size, EPOCHS, seed=0)
+state_normalizer = Normalizer(state_size)
+reward_normalizer = Normalizer(1)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -52,14 +56,11 @@ def dqn(n_episodes=2, eps_start=1.0, eps_end=0.05, eps_decay=0.995):
 
     loss_episodes = []  # list containing cumulative loss per episode
     rewards_episodes = []  # list containing cumulative rewards per episode
-    # scores_window = deque(maxlen=100)  # last 100 scores
-
-    # evaluation before learning with epsilon = 1 (random actions)
-    _, cumulative_reward = run_env("eval", 1)
-    rewards_episodes.append(cumulative_reward)
+    lrs = []
 
     eps = eps_start
-    for i_episode in range(1, n_episodes + 1):
+    lr = LR_START
+    for epoch in range(1, n_episodes + 1):
         # training
         cumulative_loss, _ = run_env("train", eps)
         loss_episodes.append(cumulative_loss)
@@ -68,21 +69,30 @@ def dqn(n_episodes=2, eps_start=1.0, eps_end=0.05, eps_decay=0.995):
         _, cumulative_reward = run_env("eval", 0)
         rewards_episodes.append(cumulative_reward)
 
-        # scores_window.append(score)  # save the most recent score
-        eps = max(eps * eps_decay, eps_end)  # decrease  epsilon
-
-        print('\rEpisode {}\tCumulative Reward {:.2f}'.format(i_episode, cumulative_reward))  # , end="")
-        # print('\rEpisode {}\tAverage travel time {:.2f}'.format(i_episode, env.get_average_travel_time())) #  , end="")
-        # if i_episode % 10 == 0:
-        #     print('\rEpisode {}\tAverage Reward {:.2f}'.format(i_episode, np.mean(scores_window)))
-
-        # if np.mean(scores_window) >= 200.0:
-        #     print('\nEnvironment solve in {:d} epsiodes!\tAverage score: {:.2f}'.format(i_episode - 100,
-        #                                                                                 np.mean(scores_window)))
-        #     torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
+        # if -3000 < cumulative_reward < -800:
         #     break
 
-    return loss_episodes, rewards_episodes
+        eps = max(eps * eps_decay, eps_end)  # decrease  epsilon
+        # lr = lr * 1/(1 + (LR_START/EPOCHS) * epoch)
+        # for param_group in agent.optimizer.param_groups:
+        #     param_group['lr' ] = lr
+
+        agent.lr_scheduler.step()  # decrease learning rate
+        lr = agent.lr_scheduler.get_last_lr()[0]
+        lrs.append(lr)
+
+        print('\rEpisode {}\tReward {:.2f}\tLoss {:.2f}\tLR: {:.2g}'.format(epoch, cumulative_reward, cumulative_loss,
+                                                                            lr))
+
+        # save model when good enough
+        # average_size = 5
+        # if len(rewards_episodes) > average_size and np.mean(rewards_episodes[:-average_size]) >= GOOD_REWARD:
+        #     print('\nTrained in {:d} episodes.\tAverage of last {} cumulative rewards: {:.2f}\n'.format(epoch, average_size, np.mean(rewards_episodes[:-5])))
+        #     torch.save(agent.qnetwork_local.state_dict(), 'trained_models/checkpoint.pth')
+        #     break
+        # torch.save(agent.qnetwork_local.state_dict(), 'trained_models/checkpoint.pth')
+
+    return loss_episodes, rewards_episodes, lrs
 
 
 def run_env(mode, eps):
@@ -95,6 +105,8 @@ def run_env(mode, eps):
     """
 
     state = env.reset()
+    state = state_normalizer.normalize(state)
+
     loss_episode = 0
     cum_rewards = 0
 
@@ -116,10 +128,17 @@ def run_env(mode, eps):
                 break
             next_state, reward, done, _ = env.step(action)
 
+        # normalize state
+        next_state = state_normalizer.normalize(next_state)
+
         if mode == "train":
+            # normalize reward
+            reward = reward_normalizer.normalize(np.array([reward]))
+
             # add to replay buffer and train
             agent.step(state, action - 1, reward, next_state, done)
             loss_episode += agent.loss
+
         if mode == "eval":
             cum_rewards += reward
 
@@ -130,25 +149,30 @@ def run_env(mode, eps):
     return loss_episode, cum_rewards
 
 
-losses, rewards = dqn(N_EPISODES)
+losses, rewards, learning_rates = dqn(EPOCHS)
 
 # evaluate last run and make ready for cleaner visualisation
 env.log()
-evaluate_one_traffic(config, args.scenario, 1)
+evaluate_one_traffic(config, args.scenario, 'train', 'print')
 
 # plot losses and rewards
 fig = plt.figure()
 skip = 5
 
-ax = fig.add_subplot(211)
+ax = fig.add_subplot(221)
 plt.plot(np.arange(skip, len(losses)), losses[skip:])
 plt.ylabel('Loss')
 plt.xlabel('Episode #')
 
-fig.add_subplot(212)
+fig.add_subplot(222)
 plt.plot(np.arange(skip, len(rewards)), rewards[skip:])
 plt.ylabel('Cumulative rewards')
 plt.xlabel('After # episodes of learning')
+
+fig.add_subplot(223)
+plt.plot(np.arange(skip, len(learning_rates)), learning_rates[skip:])
+plt.ylabel('Learning rate')
+plt.xlabel('Episode')
 
 fig.tight_layout()
 

@@ -81,16 +81,14 @@ def save_plots(name):
     os.chdir("../")
 
 
-def update_config(num_steps):
+def update_config(num_steps, mode='train'):
     args = parse_arguments()
 
     # update the config file with arguments
     with open('src/config.json') as json_file:
         config = json.load(json_file)
 
-    config["dir"] = "data/{}/".format(args.scenario)
-    # if not os.path.exists(config["dir"]):
-    #     os.makedirs(config["dir"])
+    config["dir"] = "data/{}/{}/".format(args.scenario, mode)
 
     roadnet = config["roadnetFile"]
     config['lane_phase_info'] = parse_roadnet(os.path.join(config["dir"], roadnet))

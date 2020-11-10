@@ -56,7 +56,9 @@ class CityFlowEnv:
         state = {'start_lane_vehicle_count': {lane: self.eng.get_lane_vehicle_count()[lane] for lane in
                                               self.start_lane},
                  'current_phase': self.current_phase}
-        state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']])
+        # state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']])
+        # TODO changed! add one-hot
+        state = np.array(list(state['start_lane_vehicle_count'].values()))
         return state
 
     def get_state_sotl(self):
@@ -68,6 +70,8 @@ class CityFlowEnv:
     def get_reward(self):
         lane_waiting_vehicle_count = self.eng.get_lane_waiting_vehicle_count()
         reward = -1 * sum(list(lane_waiting_vehicle_count.values()))
+        # all_vehicles_speeds = self.eng.get_vehicle_speed()
+        # reward = sum(list(all_vehicles_speeds.values()))
 
         # reward = 0
         # if self.current_phase > 7:
