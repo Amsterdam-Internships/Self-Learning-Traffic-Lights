@@ -18,7 +18,7 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 
 # How much does BUFFER_SIZE matter?
 BUFFER_SIZE = 2000  # replay buffer size
-BATCH_SIZE = 256  # minibatch size
+BATCH_SIZE = 128  # minibatch size
 # TODO tune
 GAMMA = 0.999  # discount factor
 # How much does TAU matter? How to tune?
@@ -33,7 +33,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class Agent:
     """Interacts with and learns from environment."""
 
-    def __init__(self, state_size, action_size, epochs, seed):
+    def __init__(self, state_size, action_size, seed):
         """Initialize an Agent object.
 
         Params
@@ -189,6 +189,12 @@ class Normalizer:
         self.n = np.zeros(num_inputs)
         self.mean = np.zeros(num_inputs)
         self.var = np.zeros(num_inputs)
+
+    def save(self, file_name):
+        pass
+
+    def load(self, file_name):
+        pass
 
     def normalize(self, x):
         x = x.astype(np.float)

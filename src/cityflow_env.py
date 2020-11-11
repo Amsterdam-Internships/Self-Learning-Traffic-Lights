@@ -25,6 +25,7 @@ class CityFlowEnv:
 
         self.intersection_id = list(self.lane_phase_info.keys())[0]
         self.start_lane = self.lane_phase_info[self.intersection_id]['start_lane']
+        self.end_lane = self.lane_phase_info[self.intersection_id]['end_lane']
         self.phase_list = self.lane_phase_info[self.intersection_id]["phase"]
         self.phase_startLane_mapping = self.lane_phase_info[self.intersection_id]["phase_startLane_mapping"]
 
@@ -56,9 +57,16 @@ class CityFlowEnv:
         state = {'start_lane_vehicle_count': {lane: self.eng.get_lane_vehicle_count()[lane] for lane in
                                               self.start_lane},
                  'current_phase': self.current_phase}
-        # state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']])
-        # TODO changed! add one-hot
-        state = np.array(list(state['start_lane_vehicle_count'].values()))
+        state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']-1])
+
+        all_veh = self.eng.get_vehicle_count()
+        full_lane = sum([self.eng.get_lane_vehicle_count()[lane] for lane in self.start_lane])
+        full_lane_end = sum([self.eng.get_lane_vehicle_count()[lane] for lane in self.end_lane])
+        summed = full_lane + full_lane_end
+        # print('summed', summed, all_veh)
+        # TODO why not the same?
+
+        # TODO changed! add one-hot with more phases (dus als je acties vergroot)
         return state
 
     def get_state_sotl(self):
@@ -71,7 +79,7 @@ class CityFlowEnv:
         lane_waiting_vehicle_count = self.eng.get_lane_waiting_vehicle_count()
         reward = -1 * sum(list(lane_waiting_vehicle_count.values()))
         # all_vehicles_speeds = self.eng.get_vehicle_speed()
-        # reward = sum(list(all_vehicles_speeds.values()))
+        # reward = np.amin(list(all_vehicles_speeds.values()))
 
         # reward = 0
         # if self.current_phase > 7:
