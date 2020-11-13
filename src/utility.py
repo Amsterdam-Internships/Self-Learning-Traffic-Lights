@@ -120,24 +120,25 @@ def load_pickle(filename):
         pass
 
 
-def fill_normalizer(epochs, num_steps, env, action_size, norm_state_size):
+def init_normalizer(epochs, num_steps, env, action_size, norm_state_size):
     args = parse_arguments()
     state_normalizer = Normalizer(norm_state_size)
     reward_normalizer = Normalizer(1)
 
-    for _ in range(epochs):
+    for _ in range(100):
+        env.reset()
         t = 0
         last_action = random.choice(np.arange(action_size))
         while t < num_steps:
             action = random.choice(np.arange(action_size))
             if action == last_action:
-                next_state, reward, _, _ = env.step_unnormalized(action)
+                next_state, reward, _, _ = env.step(action)
             # if action changes, add a yellow light
             else:
                 for _ in range(env.yellow_time):
-                    env.step_unnormalized(-1)  # required yellow time
+                    env.step(-1)  # required yellow time
                     t += 1
-                next_state, reward, _, _ = env.step_unnormalized(action)
+                next_state, reward, _, _ = env.step(action)
 
             state_normalizer.observe(next_state[:norm_state_size])
             reward_normalizer.observe(np.array([reward]))
@@ -159,7 +160,8 @@ class Normalizer:
         self.n += 1.
         last_mean = self.mean.copy()
         self.mean += (x - self.mean) / self.n
-        self.var += np.clip(((x - last_mean) * (x - self.mean) - self.var) / self.n, a_min=1e-2, a_max=None)
+        self.var += ((x - last_mean) * (x - self.mean) - self.var) / self.n
 
     def normalize(self, x):
-        return (x - self.mean)/np.sqrt(self.var)
+        eps = 1e-8
+        return (x - self.mean)/(np.sqrt(self.var) + eps)

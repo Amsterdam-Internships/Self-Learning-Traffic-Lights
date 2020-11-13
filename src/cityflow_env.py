@@ -63,37 +63,15 @@ class CityFlowEnv:
         state = {'start_lane_vehicle_count': {lane: self.eng.get_lane_vehicle_count()[lane] for lane in
                                               self.start_lane},
                  'current_phase': self.current_phase}
-        # TODO if statement toevoegen als normalizer bestaat (slaat nergens op om 2 functies precies hetzelfde tehebben)
-        norm_state = self.state_normalizer.normalize(np.array(list(state['start_lane_vehicle_count'].values())))
-        state = np.array(list(norm_state) + [state['current_phase']])
-        all_veh = self.eng.get_vehicle_count()
-        full_lane = sum([self.eng.get_lane_vehicle_count()[lane] for lane in self.start_lane])
-        full_lane_end = sum([self.eng.get_lane_vehicle_count()[lane] for lane in self.end_lane])
-        summed = full_lane + full_lane_end
-        # print('summed', summed, all_veh)
-        # TODO why not the same?
-
-        # TODO changed! add one-hot with more phases (dus als je acties vergroot)
-        return state
-
-    def step_unnormalized(self, next_phase):
-        if self.current_phase == next_phase:
-            self.current_phase_time += 1
+        if self.config['init_normalizer'] == 1:
+            state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']])
         else:
-            self.current_phase = next_phase
-            self.current_phase_time = 1
-        self.eng.set_tl_phase(self.intersection_id, self.current_phase + 1)  # +1 to make yellow light action 0.
-        self.phase_log.append(self.current_phase + 1)
-        self.eng.next_step()
+            norm_state = self.state_normalizer.normalize(np.array(list(state['start_lane_vehicle_count'].values())))
+            state = np.array(list(norm_state) + [state['current_phase']])
 
-        # environment gives back: next_state, reward, done, _
-        return self.get_state_unnormalized(), self.get_reward(), 0, 'niks'
+        # state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']])
 
-    def get_state_unnormalized(self):
-        state = {'start_lane_vehicle_count': {lane: self.eng.get_lane_vehicle_count()[lane] for lane in
-                                              self.start_lane},
-                 'current_phase': self.current_phase}
-        state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']])
+        # TODO add one-hot of actions
         return state
 
     def get_state_sotl(self):
@@ -105,6 +83,9 @@ class CityFlowEnv:
     def get_reward(self):
         lane_waiting_vehicle_count = self.eng.get_lane_waiting_vehicle_count()
         reward = -1 * sum(list(lane_waiting_vehicle_count.values()))
+        # if self.config['init_normalizer'] == 0:
+        #     self.reward_normalizer.normalize(np.array([reward]))
+
         # all_vehicles_speeds = self.eng.get_vehicle_speed()
         # reward = np.amin(list(all_vehicles_speeds.values()))
 
