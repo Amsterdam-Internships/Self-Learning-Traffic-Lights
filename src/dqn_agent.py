@@ -83,7 +83,6 @@ class Agent:
         """
         # Epsilon -greedy action selection
         if random.random() > eps:
-            # state = state.unsqueeze(0).to(device)
             state = torch.from_numpy(state).unsqueeze(0).float().to(device)
             self.qnetwork_local.eval()
             with torch.no_grad():
@@ -182,24 +181,3 @@ class ReplayBuffer:
     def __len__(self):
         """Return the current size of internal memory."""
         return len(self.memory)
-
-
-class Normalizer:
-    def __init__(self, num_inputs):
-        self.n = np.zeros(num_inputs)
-        self.mean = np.zeros(num_inputs)
-        self.var = np.zeros(num_inputs)
-
-    def save(self, file_name):
-        pass
-
-    def load(self, file_name):
-        pass
-
-    def normalize(self, x):
-        x = x.astype(np.float)
-        self.n += 1.
-        last_mean = self.mean.copy()
-        self.mean += (x-self.mean)/self.n
-        self.var += np.clip(((x-last_mean)*(x-self.mean) - self.var)/self.n, a_min=1e-2, a_max=None)
-        return (x - self.mean)/np.sqrt(self.var)

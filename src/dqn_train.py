@@ -18,24 +18,23 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 
 EPOCHS = 150
 NUM_STEPS = 300
-
 GOOD_REWARD = -1000
-LR_START = 1e-4
 
 args = parse_arguments()
 config = update_config(NUM_STEPS)
 intersection_id = list(config['lane_phase_info'].keys())[0]
 phase_list = config['lane_phase_info'][intersection_id]['phase']
-state_size = len(config['lane_phase_info'][intersection_id]['start_lane']) + 1
-action_size = len(phase_list)
-# to help him (otherwise he has to learn that using only these 2 actions is always better)
-# TODO make it learn with all actions
+norm_state_size = len(config['lane_phase_info'][intersection_id]['start_lane'])
+# the part of the state that is normalised + length one hot vectors
+state_size = norm_state_size + 1
+# action_size = len(phase_list)
 action_size = 2
-print("Action size = ", action_size)
+
+# fill_normalizer(100, 100, CityFlowEnv(config), action_size, norm_state_size)
 
 env = CityFlowEnv(config)
-state_normalizer = Normalizer(state_size)
-reward_normalizer = Normalizer(1)
+
+print('normalized')
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -60,7 +59,6 @@ def dqn(n_episodes=2, eps_start=0.9, eps_end=0.1, eps_decay=0.995):
     epsilons = []
 
     eps = eps_start
-    lr = LR_START
     for epoch in range(1, n_episodes + 1):
         # training
         cumulative_loss, _ = run_env("train", eps, agent)
@@ -70,16 +68,9 @@ def dqn(n_episodes=2, eps_start=0.9, eps_end=0.1, eps_decay=0.995):
         _, cumulative_reward = run_env("eval", 0, agent)
         rewards_episodes.append(cumulative_reward)
 
-        # if -3000 < cumulative_reward < -800:
-        #     break
-
         decay = (eps_start - eps_end) / (n_episodes * 0.8)
         eps = max(eps - decay, eps_end)
         epsilons.append(eps)
-
-        # lr = lr * 1/(1 + (LR_START/EPOCHS) * epoch)
-        # for param_group in agent.optimizer.param_groups:
-        #     param_group['lr' ] = lr
 
         agent.lr_scheduler.step()  # decrease learning rate
         lr = agent.lr_scheduler.get_last_lr()[0]
@@ -110,21 +101,20 @@ def run_env(mode, eps, agent):
     """
 
     state = env.reset()
-    state = state_normalizer.normalize(state)
 
     loss_episode = 0
     cum_rewards = 0
-
+    actions = {0:0, 1:0, 2:0}
     t = 0
-    last_action = agent.act(state, eps) + 1  # phase_id starts from 1, yellow light is 0.
+    last_action = agent.act(state, eps)
     while t < config['num_step']:
-        action = agent.act(state, eps) + 1
+        action = agent.act(state, eps)
         if action == last_action:
             next_state, reward, done, _ = env.step(action)
         # if action changes, add a yellow light
         else:
             for _ in range(env.yellow_time):
-                env.step(0)  # required yellow time
+                env.step(-1)  # required yellow time
                 t += 1
                 flag = (t >= config['num_step'])
                 if flag:
@@ -133,24 +123,21 @@ def run_env(mode, eps, agent):
                 break
             next_state, reward, done, _ = env.step(action)
 
-        # normalize state
-        next_state = state_normalizer.normalize(next_state)
-
         if mode == "train":
-            # normalize reward
-            reward = reward_normalizer.normalize(np.array([reward]))
-
             # add to replay buffer and train
-            agent.step(state, action - 1, reward, next_state, done)
+            agent.step(state, action, reward, next_state, done)
             loss_episode += agent.loss
 
         if mode == "eval":
+            actions[action] += 1
+            if action == 1 and cum_rewards < 0:
+                x=2
             cum_rewards += reward
 
         state = next_state
         last_action = action
         t += 1
-
+    # print(actions)
     return loss_episode, cum_rewards
 
 

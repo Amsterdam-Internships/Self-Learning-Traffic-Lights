@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import numpy as np
 import json
+from src.utility import *
 
 import cityflow
 
@@ -35,6 +36,11 @@ class CityFlowEnv:
 
         self.phase_log = []
 
+        # TODO add to config
+        args = parse_arguments()
+        self.state_normalizer = load_pickle("data/{}/state_normalizer".format(args.scenario))
+        self.reward_normalizer = load_pickle("data/{}/reward_normalizer".format(args.scenario))
+
     def reset(self):
         self.eng.reset()
         self.phase_log = []
@@ -46,9 +52,9 @@ class CityFlowEnv:
         else:
             self.current_phase = next_phase
             self.current_phase_time = 1
-        self.eng.set_tl_phase(self.intersection_id, self.current_phase)
+        self.eng.set_tl_phase(self.intersection_id, self.current_phase + 1)  # +1 to make yellow light action 0.
+        self.phase_log.append(self.current_phase + 1)
         self.eng.next_step()
-        self.phase_log.append(self.current_phase)
 
         # environment gives back: next_state, reward, done, _
         return self.get_state(), self.get_reward(), 0, 'niks'
@@ -57,8 +63,9 @@ class CityFlowEnv:
         state = {'start_lane_vehicle_count': {lane: self.eng.get_lane_vehicle_count()[lane] for lane in
                                               self.start_lane},
                  'current_phase': self.current_phase}
-        state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']-1])
-
+        # TODO if statement toevoegen als normalizer bestaat (slaat nergens op om 2 functies precies hetzelfde tehebben)
+        norm_state = self.state_normalizer.normalize(np.array(list(state['start_lane_vehicle_count'].values())))
+        state = np.array(list(norm_state) + [state['current_phase']])
         all_veh = self.eng.get_vehicle_count()
         full_lane = sum([self.eng.get_lane_vehicle_count()[lane] for lane in self.start_lane])
         full_lane_end = sum([self.eng.get_lane_vehicle_count()[lane] for lane in self.end_lane])
@@ -67,6 +74,26 @@ class CityFlowEnv:
         # TODO why not the same?
 
         # TODO changed! add one-hot with more phases (dus als je acties vergroot)
+        return state
+
+    def step_unnormalized(self, next_phase):
+        if self.current_phase == next_phase:
+            self.current_phase_time += 1
+        else:
+            self.current_phase = next_phase
+            self.current_phase_time = 1
+        self.eng.set_tl_phase(self.intersection_id, self.current_phase + 1)  # +1 to make yellow light action 0.
+        self.phase_log.append(self.current_phase + 1)
+        self.eng.next_step()
+
+        # environment gives back: next_state, reward, done, _
+        return self.get_state_unnormalized(), self.get_reward(), 0, 'niks'
+
+    def get_state_unnormalized(self):
+        state = {'start_lane_vehicle_count': {lane: self.eng.get_lane_vehicle_count()[lane] for lane in
+                                              self.start_lane},
+                 'current_phase': self.current_phase}
+        state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']])
         return state
 
     def get_state_sotl(self):

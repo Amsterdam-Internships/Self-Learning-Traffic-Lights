@@ -2,6 +2,9 @@ import json
 import argparse
 import os
 import matplotlib.pyplot as plt
+import pickle
+import numpy as np
+import random
 
 """
 This file contains various helper methods.
@@ -99,3 +102,64 @@ def update_config(num_steps, mode='train'):
         json.dump(config, outfile)
 
     return config
+
+
+def save_pickle(obj, filename):
+    with open(filename, 'wb') as output:  # Overwrites any existing file.
+        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
+
+    print('saved', filename)
+
+
+def load_pickle(filename):
+    """ Unpickle a file of pickled data. """
+    try:
+        with open(filename, "rb") as f:
+            return pickle.load(f)
+    except IOError:
+        pass
+
+
+def fill_normalizer(epochs, num_steps, env, action_size, norm_state_size):
+    args = parse_arguments()
+    state_normalizer = Normalizer(norm_state_size)
+    reward_normalizer = Normalizer(1)
+
+    for _ in range(epochs):
+        t = 0
+        last_action = random.choice(np.arange(action_size))
+        while t < num_steps:
+            action = random.choice(np.arange(action_size))
+            if action == last_action:
+                next_state, reward, _, _ = env.step_unnormalized(action)
+            # if action changes, add a yellow light
+            else:
+                for _ in range(env.yellow_time):
+                    env.step_unnormalized(-1)  # required yellow time
+                    t += 1
+                next_state, reward, _, _ = env.step_unnormalized(action)
+
+            state_normalizer.observe(next_state[:norm_state_size])
+            reward_normalizer.observe(np.array([reward]))
+            last_action = action
+            t += 1
+
+    save_pickle(state_normalizer, "data/{}/state_normalizer".format(args.scenario))
+    save_pickle(reward_normalizer, "data/{}/reward_normalizer".format(args.scenario))
+
+
+class Normalizer:
+    def __init__(self, num_inputs):
+        self.n = np.zeros(num_inputs)
+        self.mean = np.zeros(num_inputs)
+        self.var = np.zeros(num_inputs)
+
+    def observe(self, x):
+        x = x.astype(np.float)
+        self.n += 1.
+        last_mean = self.mean.copy()
+        self.mean += (x - self.mean) / self.n
+        self.var += np.clip(((x - last_mean) * (x - self.mean) - self.var) / self.n, a_min=1e-2, a_max=None)
+
+    def normalize(self, x):
+        return (x - self.mean)/np.sqrt(self.var)
