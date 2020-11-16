@@ -51,16 +51,14 @@ print("state mean en variance= ", state_normalizer.mean, state_normalizer.var)
 best_cum_reward = -10000
 
 
-def dqn(n_episodes=2, eps_start=0.9, eps_end=0.1, eps_decay=0.995):
+def dqn(n_episodes=2, eps_start=0.9, eps_end=0.1):
     """Deep Q-Learning
 
     Params
     ======
         n_episodes (int): maximum number of training epsiodes
-        max_t (int): maximum number of timesteps per episode
         eps_start (float): starting value of epsilon, for epsilon-greedy action selection
         eps_end (float): minimum value of epsilon
-        eps_decay (float): multiplicative factor (per episode) for decreasing epsilon
     """
 
     agent = Agent(state_size, action_size, seed=0)
@@ -122,6 +120,7 @@ def run_env(mode, eps, agent):
     ======
         train (bool): training or evaluating
         eps (float): value of epsilon for epsilon-greedy action selection
+        agent (Agent): the DQN agent to train
     """
     env = CityFlowEnv(config)
     state = env.reset()

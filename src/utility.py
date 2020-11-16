@@ -68,6 +68,7 @@ def parse_roadnet(roadnet_file):
     return lane_phase_info_dict
 
 
+# save plots of experiment
 def save_plots(name):
     args = parse_arguments()
     # define the name of the directory to be created
