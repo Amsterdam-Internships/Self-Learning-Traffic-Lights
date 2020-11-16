@@ -18,14 +18,18 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-EPOCHS = 100
+EPOCHS = 200
 NUM_STEPS = 300
-SUFFICIENT_REWARD = -1000
+TRAINING_RUNS = 3
 
 args = parse_arguments()
 config = update_config(NUM_STEPS)
 # set to 1 if normalizer should be initialized
 config['init_normalizer'] = 0
+# set to 1 to normalize
+config['normalize_input'] = 1
+config['normalize_rewards'] = 1
+load = 0
 
 intersection_id = list(config['lane_phase_info'].keys())[0]
 phase_list = config['lane_phase_info'][intersection_id]['phase']
@@ -44,6 +48,8 @@ state_normalizer = load_pickle("data/{}/state_normalizer".format(args.scenario))
 print("reward mean en variance = ", reward_normalizer.mean, reward_normalizer.var)
 print("state mean en variance= ", state_normalizer.mean, state_normalizer.var)
 
+best_cum_reward = -10000
+
 
 def dqn(n_episodes=2, eps_start=0.9, eps_end=0.1, eps_decay=0.995):
     """Deep Q-Learning
@@ -58,20 +64,28 @@ def dqn(n_episodes=2, eps_start=0.9, eps_end=0.1, eps_decay=0.995):
     """
 
     agent = Agent(state_size, action_size, seed=0)
+    starting_epoch = 1
+
+    if load == 1:
+        checkpoint = torch.load("trained_models/checkpoint")
+        agent.load_state_dict(checkpoint['model_state_dict'])
+        agent.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        starting_epoch = checkpoint['epoch']
 
     loss_episodes = []  # list containing cumulative loss per episode
     rewards_episodes = []  # list containing cumulative rewards per episode
     learning_rates = []
     epsilons = []
     mean_diff_q_vals = []
+    global best_cum_reward
 
     eps = eps_start
-    for epoch in range(1, n_episodes + 1):
+    for epoch in range(starting_epoch, n_episodes + 1):
         # training
-        cumulative_loss, _, _, _ = run_env("train", eps, agent)
+        cumulative_loss, _, _, _, _ = run_env("train", eps, agent)
 
         # evaluation
-        _, cumulative_reward, actions, diff_q_values = run_env("eval", 0, agent)
+        _, cumulative_reward, actions, diff_q_values, env = run_env("eval", 0, agent)
 
         decay = (eps_start - eps_end) / (n_episodes * 0.8)
         eps = max(eps - decay, eps_end)
@@ -87,15 +101,16 @@ def dqn(n_episodes=2, eps_start=0.9, eps_end=0.1, eps_decay=0.995):
 
         print('\rEpisode {}\tReward {}\tLoss {:.0f}\tLearning rate: {:.2g}\tEpsilon  {:.2g}\t Action count {}\t '
               'Mean difference in Q values {:.3g}'.format(epoch, cumulative_reward, cumulative_loss, lr, eps,
-                                                      list(actions.values()), np.mean(diff_q_values)))
-
-        # save model when good enough
-        # average_size = 5
-        # if len(rewards_episodes) > average_size and np.mean(rewards_episodes[:-average_size]) >= GOOD_REWARD:
-        #     print('\nTrained in {:d} episodes.\tAverage of last {} cumulative rewards: {:.2f}\n'.format(epoch, average_size, np.mean(rewards_episodes[:-5])))
-        #     torch.save(agent.qnetwork_local.state_dict(), 'trained_models/checkpoint.pth')
-        #     break
-        # torch.save(agent.qnetwork_local.state_dict(), 'trained_models/checkpoint.pth')
+                                                          list(actions.values()), np.mean(diff_q_values)))
+        if cumulative_reward > best_cum_reward:
+            best_cum_reward = cumulative_reward
+            print('BEST\n')
+            env.log()
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': agent.qnetwork_local.state_dict(),
+                'optimizer_state_dict': agent.optimizer.state_dict(),
+            }, 'trained_models/checkpoint.tar')
 
     return loss_episodes, rewards_episodes, learning_rates, epsilons, mean_diff_q_vals
 
@@ -147,22 +162,18 @@ def run_env(mode, eps, agent):
         state = next_state
         last_action = action
         t += 1
-    env.log()
-    return round(loss_episode, 2), cum_rewards, actions, diff_q_values
+    return round(loss_episode, 2), cum_rewards, actions, diff_q_values, env
 
 
 # Average over training runs
 training_runs = []
-for i in range(3):
+for i in range(TRAINING_RUNS):
     training_runs.append(dqn(EPOCHS))
 losses, rewards, lrs, epses, diff_q_vals = np.mean(training_runs, 0)
 losses_std, rewards_std, _, _, diff_q_vals_std = np.std(training_runs, 0)
 
-# run 1 training loop
-# losses, rewards, lrs, epses = dqn(EPOCHS)
-
 # evaluate last run and make ready for cleaner visualisation
-# evaluate_one_traffic(config, args.scenario, 'train', 'print')
+evaluate_one_traffic(config, args.scenario, 'train', 'print')
 
 """
 PLOTS

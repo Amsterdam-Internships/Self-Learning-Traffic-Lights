@@ -36,10 +36,8 @@ class CityFlowEnv:
 
         self.phase_log = []
 
-        # TODO add to config
-        args = parse_arguments()
-        self.state_normalizer = load_pickle("data/{}/state_normalizer".format(args.scenario))
-        self.reward_normalizer = load_pickle("data/{}/reward_normalizer".format(args.scenario))
+        self.state_normalizer = load_pickle("data/{}/state_normalizer".format(self.config['scenario']))
+        self.reward_normalizer = load_pickle("data/{}/reward_normalizer".format(self.config['scenario']))
 
     def reset(self):
         self.eng.reset()
@@ -63,13 +61,11 @@ class CityFlowEnv:
         state = {'start_lane_vehicle_count': {lane: self.eng.get_lane_vehicle_count()[lane] for lane in
                                               self.start_lane},
                  'current_phase': self.current_phase}
-        if self.config['init_normalizer'] == 1:
+        if self.config['init_normalizer'] == 1 or self.config['normalize_input'] == 0:
             state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']])
         else:
             norm_state = self.state_normalizer.normalize(np.array(list(state['start_lane_vehicle_count'].values())))
             state = np.array(list(norm_state) + [state['current_phase']])
-
-        # state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']])
 
         # TODO add one-hot of actions
         return state
@@ -83,8 +79,8 @@ class CityFlowEnv:
     def get_reward(self):
         lane_waiting_vehicle_count = self.eng.get_lane_waiting_vehicle_count()
         reward = -1 * sum(list(lane_waiting_vehicle_count.values()))
-        # if self.config['init_normalizer'] == 0:
-        #     self.reward_normalizer.normalize(np.array([reward]))
+        if self.config['init_normalizer'] == 0 and self.config['normalize_rewards'] == 1:
+            self.reward_normalizer.normalize(np.array([reward]))
 
         # all_vehicles_speeds = self.eng.get_vehicle_speed()
         # reward = np.amin(list(all_vehicles_speeds.values()))
@@ -101,6 +97,16 @@ class CityFlowEnv:
         # self.eng.print_log(self.config['replay_data_path'] + "/replay_roadnet.json",
         #                    self.config['replay_data_path'] + "/replay_flow.json")
         df = pd.DataFrame({self.intersection_id: self.phase_log[:self.config['num_step']]})
-        if not os.path.exists(self.config['dir']):
-            os.makedirs(self.config['dir'])
-        df.to_csv(os.path.join(self.config['dir'], 'signal_plan_template.txt'), index=None)
+        path = "experiments/{}".format(self.config['exp_name'])
+        if not os.path.exists(path):
+            try:
+                os.mkdir(path)
+            except OSError:
+                print("Creation of the directory %s failed" % path)
+        path = "experiments/{}/{}".format(self.config['exp_name'], self.config["mode"])
+        if not os.path.exists(path):
+            try:
+                os.mkdir(path)
+            except OSError:
+                print("Creation of the directory %s failed" % path)
+        df.to_csv(os.path.join(path, 'signal_plan_template.txt'), index=None)

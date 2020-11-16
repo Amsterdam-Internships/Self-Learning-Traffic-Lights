@@ -96,6 +96,9 @@ def update_config(num_steps, mode='train'):
     roadnet = config["roadnetFile"]
     config['lane_phase_info'] = parse_roadnet(os.path.join(config["dir"], roadnet))
     config['num_step'] = num_steps
+    config['scenario'] = args.scenario
+    config['mode'] = mode
+    config['exp_name'] = args.exp_name
 
     # write to file so the engine can open it.
     with open('src/config_args.json', 'w') as outfile:
@@ -125,7 +128,7 @@ def init_normalizer(epochs, num_steps, env, action_size, norm_state_size):
     state_normalizer = Normalizer(norm_state_size)
     reward_normalizer = Normalizer(1)
 
-    for _ in range(100):
+    for _ in range(epochs):
         env.reset()
         t = 0
         last_action = random.choice(np.arange(action_size))

@@ -8,5 +8,6 @@
 	"laneChange": false,
 	"saveReplay": true,
 	"roadnetLogFile": "replay_roadnet.json",
-	"replayLogFile": "replay.txt"
+	"replayLogFile": "replay.txt",
+	"root": "/Users/sierkkanis/Documents/MscAI/Thesis/Code/Eigen"
 }

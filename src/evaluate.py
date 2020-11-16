@@ -21,8 +21,9 @@ def main():
 
 
 def evaluate_one_traffic(dic_sim_setting, scenario, mode='train', printing='no_printing'):
-    plan_file = "data/{}/{}/signal_plan_template.txt".format(scenario, mode)
-    out_file = "data/{}/{}/evaluation.txt".format(scenario, mode)
+    args = parse_arguments()
+    plan_file = "experiments/{}/{}/signal_plan_template.txt".format(args.exp_name, mode)
+    out_file = "experiments/{}/{}/evaluation.txt".format(args.exp_name, mode)
 
     if check(plan_file, dic_sim_setting["num_step"]):
         tt = cal_travel_time(dic_sim_setting, plan_file)
