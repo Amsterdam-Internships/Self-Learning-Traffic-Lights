@@ -18,16 +18,16 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-EPOCHS = 200
+EPOCHS = 2
 NUM_STEPS = 300
-TRAINING_RUNS = 3
+TRAINING_RUNS = 1
 
 args = parse_arguments()
 config = update_config(NUM_STEPS)
 # set to 1 if normalizer should be initialized
 config['init_normalizer'] = 0
 # set to 1 to normalize
-config['normalize_input'] = 1
+config['normalize_input'] = 0
 config['normalize_rewards'] = 1
 load = 0
 

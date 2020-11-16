@@ -18,13 +18,13 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 
 # How much does BUFFER_SIZE matter?
 BUFFER_SIZE = 2000  # replay buffer size
-BATCH_SIZE = 128  # minibatch size
+BATCH_SIZE = 64  # minibatch size
 # TODO tune
 GAMMA = 0.999  # discount factor
 # How much does TAU matter? How to tune?
 TAU = 1e-3  # for soft update of target parameters
 LR = 1e-3  # learning rate
-LR_decay = 0.95   # learning rate decay
+LR_decay = 0.99    # learning rate decay
 UPDATE_EVERY = 5  # how often to update the network
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
