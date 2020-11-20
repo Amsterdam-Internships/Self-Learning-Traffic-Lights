@@ -34,7 +34,8 @@ def evaluate_one_traffic(dic_sim_setting, scenario, mode='train', printing='no_p
 
             # change to baseline of fixed or sotl later. if score is > 0 you approved by that margin,
             # if score is <0 you got worse.
-            b = 62.36  # SOTL average travel time
+            b = 62.36  # SOTL average travel time for 1x1 straight
+            # b = 77.89  # SOTL average travel time for 1x1
             score = (b - tt)/b
 
             print("====================== score ======================")
@@ -42,7 +43,7 @@ def evaluate_one_traffic(dic_sim_setting, scenario, mode='train', printing='no_p
             print("====================== score ======================")
 
             with open(out_file, "w") as f:
-                f.write(str(score))
+                f.write(str(tt))
     else:
         print("planFile is invalid, Rejected!")
 

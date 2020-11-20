@@ -36,8 +36,8 @@ class CityFlowEnv:
 
         self.phase_log = []
 
-        self.state_normalizer = load_pickle("data/{}/state_normalizer".format(self.config['scenario']))
-        self.reward_normalizer = load_pickle("data/{}/reward_normalizer".format(self.config['scenario']))
+        self.state_normalizer = Normalizer(len(config['lane_phase_info'][self.intersection_id]['start_lane']), config['norm_tau'])
+        self.reward_normalizer = Normalizer(1, config['norm_tau'])
 
     def reset(self):
         self.eng.reset()
@@ -58,17 +58,18 @@ class CityFlowEnv:
         return self.get_state(), self.get_reward(), 0, 'niks'
 
     def get_state(self):
-        state = {'start_lane_vehicle_count': {lane: self.eng.get_lane_vehicle_count()[lane] for lane in
-                                              self.start_lane},
-                 'current_phase': self.current_phase}
-        if self.config['init_normalizer'] == 1 or self.config['normalize_input'] == 0:
-            state = np.array(list(state['start_lane_vehicle_count'].values()) + [state['current_phase']])
-        else:
-            norm_state = self.state_normalizer.normalize(np.array(list(state['start_lane_vehicle_count'].values())))
-            state = np.array(list(norm_state) + [state['current_phase']])
+        lane_vehicle_count = [self.eng.get_lane_vehicle_count()[lane] for lane in self.start_lane]
+        # phases = np.zeros(2)
+        phases = np.zeros(len(self.phase_list))
+        phases[self.current_phase] = 1
 
-        # TODO add one-hot of actions
-        return state
+        if self.config['normalize_input'] == 1:
+            self.state_normalizer.observe(np.array(lane_vehicle_count))
+            lane_vehicle_count = self.state_normalizer.normalize(np.array(lane_vehicle_count))
+
+        combined_state = np.array(list(lane_vehicle_count) + list(phases))
+
+        return combined_state
 
     def get_state_sotl(self):
         state = {'lane_waiting_vehicle_count': self.eng.get_lane_waiting_vehicle_count(),
@@ -79,23 +80,17 @@ class CityFlowEnv:
     def get_reward(self):
         lane_waiting_vehicle_count = self.eng.get_lane_waiting_vehicle_count()
         reward = -1 * sum(list(lane_waiting_vehicle_count.values()))
-        if self.config['init_normalizer'] == 0 and self.config['normalize_rewards'] == 1:
-            self.reward_normalizer.normalize(np.array([reward]))
-
-        # all_vehicles_speeds = self.eng.get_vehicle_speed()
-        # reward = np.amin(list(all_vehicles_speeds.values()))
-
-        # reward = 0
-        # if self.current_phase > 7:
-        #     reward = 10
+        if self.config['normalize_rewards'] == 1:
+            self.reward_normalizer.observe(np.array([reward]))
+            reward = self.reward_normalizer.normalize(np.array([reward]))[0]
         return reward
 
     def get_average_travel_time(self):
         return self.eng.get_average_travel_time()
 
     def log(self):
-        # self.eng.print_log(self.config['replay_data_path'] + "/replay_roadnet.json",
-        #                    self.config['replay_data_path'] + "/replay_flow.json")
+        """Saves chosen actions and normalizers to files.
+        """
         df = pd.DataFrame({self.intersection_id: self.phase_log[:self.config['num_step']]})
         path = "experiments/{}".format(self.config['exp_name'])
         if not os.path.exists(path):
@@ -110,3 +105,13 @@ class CityFlowEnv:
             except OSError:
                 print("Creation of the directory %s failed" % path)
         df.to_csv(os.path.join(path, 'signal_plan_template.txt'), index=None)
+
+        path = "trained_models/{}".format(self.config["exp_name"])
+        if not os.path.exists(path):
+            try:
+                os.mkdir(path)
+            except OSError:
+                print("Creation of the directory %s failed" % path)
+
+        save_pickle(self.state_normalizer, os.path.join(path, "state_normalizer"))
+        save_pickle(self.reward_normalizer, os.path.join(path, "reward_normalizer"))

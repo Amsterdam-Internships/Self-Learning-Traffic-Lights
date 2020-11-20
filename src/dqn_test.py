@@ -18,7 +18,7 @@ This file contains the
 args = parse_arguments()
 NUM_STEPS = 300
 # todo make other flow files to test with (maybe he should open multiple?)
-config = update_config(NUM_STEPS, 'test')
+config = setup_config(NUM_STEPS, 'test')
 
 intersection_id = list(config['lane_phase_info'].keys())[0]
 phase_list = config['lane_phase_info'][intersection_id]['phase']
@@ -32,6 +32,9 @@ env = CityFlowEnv(config)
 agent = Agent(state_size, action_size, seed=0)
 # load the weights from file
 agent.qnetwork_local.load_state_dict(torch.load('trained_models/checkpoint.pth'))
+
+# self.state_normalizer = load_pickle("data/{}/state_normalizer".format(self.config['scenario']))
+# self.reward_normalizer = load_pickle("data/{}/reward_normalizer".format(self.config['scenario']))
 
 # TODO necessary here?
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

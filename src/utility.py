@@ -12,7 +12,6 @@ This file contains various helper methods.
 Source: https://github.com/tianrang-intelligence/TSCC2019
 """
 
-
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scenario", type=str, default="new_scenario")
@@ -85,21 +84,55 @@ def save_plots(name):
     os.chdir("../")
 
 
-def update_config(num_steps, mode='train'):
+def setup_config(num_steps, mode, norm_inputs, norm_rewards, norm_tau):
+    """Update the configuration file
+
+    Params
+    ======
+        num_steps (int): maximum number of training episodes
+        mode (string):
+        norm_inputs (bool):
+        norm_rewards (bool):
+        norm_tau (float):
+    """
     args = parse_arguments()
 
     # update the config file with arguments
     with open('src/config.json') as json_file:
         config = json.load(json_file)
 
-    config["dir"] = "data/{}/{}/".format(args.scenario, mode)
-
-    roadnet = config["roadnetFile"]
-    config['lane_phase_info'] = parse_roadnet(os.path.join(config["dir"], roadnet))
+    config["flowFile"] = "data/{}/{}/{}".format(args.scenario, mode, config["flowFile"])
+    config["roadnetFile"] = "data/{}/{}/{}".format(args.scenario, mode, config["roadnetFile"])
+    config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
+    config["roadnetLogFile"] = "experiments/{}/{}/{}".format(args.exp_name, mode, config["roadnetLogFile"])
+    config["replayLogFile"] = "experiments/{}/{}/{}".format(args.exp_name, mode, config["replayLogFile"])
     config['num_step'] = num_steps
     config['scenario'] = args.scenario
     config['mode'] = mode
     config['exp_name'] = args.exp_name
+    config['normalize_input'] = norm_inputs
+    config['normalize_rewards'] = norm_rewards
+    config['norm_tau'] = norm_tau
+
+    path = "experiments/{}".format(config['exp_name'])
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
+    path = "experiments/{}/{}".format(config['exp_name'], config["mode"])
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
+
+    path = "trained_models/{}".format(args.exp_name)
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
 
     # write to file so the engine can open it.
     with open('src/config_args.json', 'w') as outfile:
@@ -112,8 +145,6 @@ def save_pickle(obj, filename):
     with open(filename, 'wb') as output:  # Overwrites any existing file.
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
-    print('saved', filename)
-
 
 def load_pickle(filename):
     """ Unpickle a file of pickled data. """
@@ -124,47 +155,19 @@ def load_pickle(filename):
         pass
 
 
-def init_normalizer(epochs, num_steps, env, action_size, norm_state_size):
-    args = parse_arguments()
-    state_normalizer = Normalizer(norm_state_size)
-    reward_normalizer = Normalizer(1)
-
-    for _ in range(epochs):
-        env.reset()
-        t = 0
-        last_action = random.choice(np.arange(action_size))
-        while t < num_steps:
-            action = random.choice(np.arange(action_size))
-            if action == last_action:
-                next_state, reward, _, _ = env.step(action)
-            # if action changes, add a yellow light
-            else:
-                for _ in range(env.yellow_time):
-                    env.step(-1)  # required yellow time
-                    t += 1
-                next_state, reward, _, _ = env.step(action)
-
-            state_normalizer.observe(next_state[:norm_state_size])
-            reward_normalizer.observe(np.array([reward]))
-            last_action = action
-            t += 1
-
-    save_pickle(state_normalizer, "data/{}/state_normalizer".format(args.scenario))
-    save_pickle(reward_normalizer, "data/{}/reward_normalizer".format(args.scenario))
-
-
 class Normalizer:
-    def __init__(self, num_inputs):
+    def __init__(self, num_inputs, tau):
         self.n = np.zeros(num_inputs)
         self.mean = np.zeros(num_inputs)
         self.var = np.zeros(num_inputs)
+        self.tau = tau
 
     def observe(self, x):
         x = x.astype(np.float)
         self.n += 1.
         last_mean = self.mean.copy()
-        self.mean += (x - self.mean) / self.n
-        self.var += ((x - last_mean) * (x - self.mean) - self.var) / self.n
+        self.mean = (1 - self.tau) * self.mean + self.tau * x
+        self.var = (1 - self.tau) * self.var + self.tau * (x - last_mean) * (x - self.mean)
 
     def normalize(self, x):
         eps = 1e-8

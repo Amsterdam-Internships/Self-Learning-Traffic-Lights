@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as f
+from torch.nn.utils import weight_norm
 
 """
 This file sets up the neural network of the DQN agent in PyTorch.
@@ -27,12 +28,9 @@ class QNetwork(nn.Module):
         """
         super(QNetwork, self).__init__()  # calls __init__ method of nn.Module class
         self.seed = torch.manual_seed(seed)
-        self.batch_norm0 = nn.BatchNorm1d(state_size)
-        self.fc1 = nn.Linear(state_size, fc1_unit)
-        self.batch_norm1 = nn.BatchNorm1d(fc1_unit)
-        self.fc2 = nn.Linear(fc1_unit, fc2_unit)
-        self.batch_norm2 = nn.BatchNorm1d(fc2_unit)
-        self.fc3 = nn.Linear(fc2_unit, action_size)
+        self.fc1 = weight_norm(nn.Linear(state_size, fc1_unit), name='weight')
+        self.fc2 = weight_norm(nn.Linear(fc1_unit, fc2_unit), name='weight')
+        self.fc3 = weight_norm(nn.Linear(fc2_unit, action_size), name='weight')
 
     def forward(self, x):
         """

@@ -12,8 +12,8 @@ Source:https://github.com/tianrang-intelligence/TSCC2019
 """
 
 args = parse_arguments()
-num_steps = 300
-config = update_config(num_steps)
+NUM_STEPS = 300
+config = setup_config(NUM_STEPS, 'train', 0, 0, 0)
 
 env = CityFlowEnv(config)
 
@@ -21,10 +21,10 @@ lane_phase_info = config['lane_phase_info']
 intersection_id = list(lane_phase_info.keys())[0]
 phase_list = lane_phase_info[intersection_id]["phase"]
 phase_startLane_mapping = lane_phase_info[intersection_id]["phase_startLane_mapping"]
-current_phase = phase_list[0]
-current_phase_time = 0
+# current_phase = phase_list[0]
+# current_phase_time = 0
 yellow_time = 5
-phase_log = []
+# phase_log = []
 
 phi = 20
 min_green_vehicle = 2
@@ -40,13 +40,17 @@ def choose_action(state):
     global action
     if state["current_phase_time"] >= phi:
         num_green_vehicle = sum(
-            [state["lane_waiting_vehicle_count"][i] for i in phase_startLane_mapping[cur_phase]])
+            [state["lane_waiting_vehicle_count"][i] for i in phase_startLane_mapping[cur_phase+1]])
         num_red_vehicle = sum([state["lane_waiting_vehicle_count"][i] for i in
                                lane_phase_info[intersection_id]["start_lane"]]) - num_green_vehicle
+        print(num_green_vehicle, num_red_vehicle)
         if num_green_vehicle <= min_green_vehicle and num_red_vehicle > max_red_vehicle:
-            # action = cur_phase % len(phase_list) + 1
-            # SOTL doesn't work if too much freedom of actions it looks like, only with opposite phases.
-            action = cur_phase % 2 + 1
+            if cur_phase == len(phase_list)-1:
+            # if cur_phase == 1:  # use if only 2 actions (because it goes through full action cycle)
+                action = 0
+            else:
+                action += 1
+
 
 
 def run_sotl():
@@ -63,7 +67,7 @@ def run_sotl():
             env.step(action)
         else:
             for _ in range(yellow_time):
-                env.step(0)  # required yellow time
+                env.step(-1)  # required yellow time
                 t += 1
                 flag = (t >= config['num_step'])
                 if flag:
@@ -78,4 +82,4 @@ def run_sotl():
 run_sotl()
 # evaluate last run and make ready for cleaner visualisation
 env.log()
-evaluate_one_traffic(config, args.scenario, 1)
+evaluate_one_traffic(config, args.scenario, 'train', 'print')

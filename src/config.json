@@ -1,7 +1,7 @@
 {
 	"interval": 1.0,
 	"seed": 0,
-	"dir": "data/niks/",
+	"dir": "",
 	"roadnetFile": "roadnet.json",
 	"flowFile": "flow.json",
 	"rlTrafficLight": true,

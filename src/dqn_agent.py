@@ -16,7 +16,7 @@ Soft-updates are used to update the target network every training iteration.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-# How much does BUFFER_SIZE matter?
+# TODO How much does BUFFER_SIZE matter?
 BUFFER_SIZE = 2000  # replay buffer size
 BATCH_SIZE = 64  # minibatch size
 # TODO tune
@@ -24,8 +24,9 @@ GAMMA = 0.999  # discount factor
 # How much does TAU matter? How to tune?
 TAU = 1e-3  # for soft update of target parameters
 LR = 1e-3  # learning rate
-LR_decay = 0.99    # learning rate decay
+LR_decay = 0.99  # learning rate decay
 UPDATE_EVERY = 5  # how often to update the network
+FREEZE_TARGET = 2000
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -47,21 +48,21 @@ class Agent:
         self.state_size = state_size
         self.action_size = action_size
 
-        # Q- Network
+        # Q-Networks
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
         self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
 
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
         self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=LR_decay)
 
-        # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE)
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
+        self.learn_step = 0
 
         self.loss = 0
 
-    # done is not necessary for TLC
+    # done is maybe not necessary for TLC
     def step(self, state, action, reward, next_step, done):
         # Save experience in replay memory
         self.memory.add(state, action, reward, next_step, done)
@@ -75,13 +76,15 @@ class Agent:
                 self.learn(experience, GAMMA)
 
     def act(self, state, eps=0):
-        """Returns action for given state as per current policy
+        """Returns action for given state as per current policy.
+
         Params
         =======
             state (array_like): current state
             eps (float): epsilon, for epsilon-greedy action selection
         """
-        # Epsilon -greedy action selection
+
+        # Epsilon-greedy action selection
         if random.random() > eps:
             state = torch.from_numpy(state).unsqueeze(0).float().to(device)
             self.qnetwork_local.eval()
@@ -94,17 +97,19 @@ class Agent:
 
     def learn(self, experiences, gamma):
         """Update value parameters using given batch of experience tuples.
+
         Params
         =======
             experiences (Tuple[torch.Variable]): tuple of (s, a, r, s', done) tuples
             gamma (float): discount factor
         """
+
         states, actions, rewards, next_state, dones = experiences
 
         criterion = torch.nn.MSELoss()
         self.qnetwork_local.train()
         self.qnetwork_target.eval()
-        # shape of output from the model (batch_size,action_dim) = (64,8)
+        # Shape of output from the model is (batch_size, action_dim)
         predicted_targets = self.qnetwork_local(states).gather(1, actions)
 
         with torch.no_grad():
@@ -119,19 +124,26 @@ class Agent:
         loss.backward()
         self.optimizer.step()
 
-        # ------------------- update target network ------------------- #
+        # Update target network
         self.soft_update(TAU)
+
+        # Update target network every FREEZE_TARGET time steps.
+        self.learn_step = (self.learn_step + 1) % FREEZE_TARGET
+        if self.learn_step == 0:
+            self.qnetwork_target.load_state_dict(self.qnetwork_local.state_dict())
+            print("UPDATE TARGET NETWORK")
 
     def soft_update(self, tau):
         """Soft update model parameters.
-        θ_target = τ*θ_local + (1 - τ)*θ_target
+        θ_target = τ * θ_local + (1 - τ) * θ_target
+
         Params
         =======
             local model (PyTorch model): weights will be copied from
             target model (PyTorch model): weights will be copied to
             tau (float): interpolation parameter
         """
-        # changed source to add 'self', should not make a difference.
+
         for target_param, local_param in zip(self.qnetwork_target.parameters(),
                                              self.qnetwork_local.parameters()):
             target_param.data.copy_(tau * local_param.data + (1 - tau) * target_param.data)
@@ -165,7 +177,7 @@ class ReplayBuffer:
         self.memory.append(experience)
 
     def sample(self):
-        """Randomly sample a batch of experiences from memory"""
+        """Randomly sample a batch of experiences from memory."""
         experiences = random.sample(self.memory, k=self.batch_size)
 
         states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(device)
