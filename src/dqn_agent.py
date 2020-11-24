@@ -16,17 +16,14 @@ Soft-updates are used to update the target network every training iteration.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-# TODO How much does BUFFER_SIZE matter?
 BUFFER_SIZE = 2000  # replay buffer size
 BATCH_SIZE = 64  # minibatch size
-# TODO tune
-GAMMA = 0.999  # discount factor
-# How much does TAU matter? How to tune?
+GAMMA = 0.95  # discount factor
 TAU = 1e-3  # for soft update of target parameters
 LR = 1e-3  # learning rate
 LR_decay = 0.99  # learning rate decay
-UPDATE_EVERY = 5  # how often to update the network
-FREEZE_TARGET = 2000
+UPDATE_EVERY = 5  # how often to update the local network
+FREEZE_TARGET = 2000  # how often to update the target network
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -56,20 +53,21 @@ class Agent:
         self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=LR_decay)
 
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE)
-        # Initialize time step (for updating every UPDATE_EVERY steps)
-        self.t_step = 0
-        self.learn_step = 0
+        # Initialize time steps (for updating every UPDATE_EVERY and FREEZE_TARGET steps)
+        self.train_step = 0
+        self.update_step = 0
 
         self.loss = 0
+        self.training_step = 0
+        self.acting_step = 0
 
-    # done is maybe not necessary for TLC
     def step(self, state, action, reward, next_step, done):
         # Save experience in replay memory
         self.memory.add(state, action, reward, next_step, done)
 
         # Learn every UPDATE_EVERY time steps.
-        self.t_step = (self.t_step + 1) % UPDATE_EVERY
-        if self.t_step == 0:
+        self.train_step = (self.train_step + 1) % UPDATE_EVERY
+        if self.train_step == 0:
             # If enough samples are available in memory, get random subset and learn
             if len(self.memory) > BATCH_SIZE:
                 experience = self.memory.sample()
@@ -119,7 +117,7 @@ class Agent:
         labels = rewards + (gamma * labels_next * (1 - dones))
 
         loss = criterion(predicted_targets, labels).to(device)
-        self.loss = round(loss.item(), 2)
+        self.loss = loss.item()
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -128,8 +126,8 @@ class Agent:
         self.soft_update(TAU)
 
         # Update target network every FREEZE_TARGET time steps.
-        self.learn_step = (self.learn_step + 1) % FREEZE_TARGET
-        if self.learn_step == 0:
+        self.update_step = (self.update_step + 1) % FREEZE_TARGET
+        if self.update_step == 0:
             self.qnetwork_target.load_state_dict(self.qnetwork_local.state_dict())
             print("UPDATE TARGET NETWORK")
 

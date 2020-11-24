@@ -36,12 +36,6 @@ class QNetwork(nn.Module):
         """
         Build a network that maps state -> action values.
         """
-
-        # x = self.batch_norm0(x)
-        # x = self.batch_norm1(f.relu(self.fc1(x)))
-        # x = self.batch_norm2(f.relu(self.fc2(x)))
-        # return self.fc3(x)
-
         x = f.relu(self.fc1(x))
         x = f.relu(self.fc2(x))
         return self.fc3(x)

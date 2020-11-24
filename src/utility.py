@@ -12,6 +12,7 @@ This file contains various helper methods.
 Source: https://github.com/tianrang-intelligence/TSCC2019
 """
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scenario", type=str, default="new_scenario")
