@@ -85,7 +85,7 @@ def save_plots(name):
     os.chdir("../")
 
 
-def setup_config(num_steps, mode, norm_inputs, norm_rewards, norm_tau):
+def setup_config(num_steps, mode, norm_inputs=0, norm_rewards=0, norm_tau=1):
     """Update the configuration file
 
     Params

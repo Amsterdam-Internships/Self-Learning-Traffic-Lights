@@ -26,7 +26,7 @@ def evaluate_one_traffic(dic_sim_setting, scenario, mode='train', printing='no_p
     out_file = "experiments/{}/{}/evaluation.txt".format(args.exp_name, mode)
 
     if check(plan_file, dic_sim_setting["num_step"]):
-        tt = cal_travel_time(dic_sim_setting, plan_file)
+        tt, actions = cal_travel_time(dic_sim_setting, plan_file)
         if printing == 'print':
             print("====================== travel time ======================")
             print("scenario_{0}: {1:.2f} s".format(scenario, tt))
@@ -43,6 +43,7 @@ def evaluate_one_traffic(dic_sim_setting, scenario, mode='train', printing='no_p
             print("====================== score ======================")
 
             with open(out_file, "w") as f:
+                f.write(str(list(actions.values())) + '\n' )
                 f.write(str(tt))
     else:
         print("planFile is invalid, Rejected!")
@@ -55,8 +56,11 @@ def cal_travel_time(dic_sim_setting, plan_file):
     plan = pd.read_csv(plan_file, sep="\t", header=0, dtype=int)
     intersection_id = plan.columns[0]
 
+    actions = {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
+
     for step in range(dic_sim_setting["num_step"]):
         phase = int(plan.loc[step])
+        actions[phase-1] += 1
         eng.set_tl_phase(intersection_id, phase)
         eng.next_step()
         current_time = eng.get_current_time()
@@ -64,7 +68,7 @@ def cal_travel_time(dic_sim_setting, plan_file):
         # if current_time % 100 == 0:
         #     print("Time: {} / {}".format(current_time, dic_sim_setting["num_step"]))
 
-    return eng.get_average_travel_time()
+    return eng.get_average_travel_time(), actions
 
 
 def check(plan_file, num_step):

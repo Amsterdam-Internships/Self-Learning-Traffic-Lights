@@ -20,10 +20,11 @@ BUFFER_SIZE = 2000  # replay buffer size
 BATCH_SIZE = 64  # minibatch size
 GAMMA = 0.95  # discount factor
 TAU = 1e-3  # for soft update of target parameters
-LR = 1e-3  # learning rate
-LR_decay = 0.99  # learning rate decay
+LR = 1e-4  # learning rate
+LR_decay = 0.999  # learning rate decay
+LR_STEP_TIMES = 300
 UPDATE_EVERY = 5  # how often to update the local network
-FREEZE_TARGET = 2000  # how often to update the target network
+FREEZE_TARGET = 10000  # how often to replace the target network
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -50,7 +51,8 @@ class Agent:
         self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
 
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
-        self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=LR_decay)
+        # self.optimizer = optim.SGD(self.qnetwork_local.parameters(), lr=LR, momentum=0.9)
+        self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=LR_STEP_TIMES, gamma=0.5)
 
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE)
         # Initialize time steps (for updating every UPDATE_EVERY and FREEZE_TARGET steps)
@@ -120,6 +122,8 @@ class Agent:
         self.loss = loss.item()
         self.optimizer.zero_grad()
         loss.backward()
+        for param in self.qnetwork_local.parameters():
+            param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
         # Update target network

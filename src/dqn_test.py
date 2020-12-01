@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
 
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from src.cityflow_env import CityFlowEnv
 from src.dqn_agent import Agent
@@ -13,46 +15,50 @@ This file contains the
 
 """
 
-# TODO automatically set working directory
-
 args = parse_arguments()
 NUM_STEPS = 300
-# todo make other flow files to test with (maybe he should open multiple?)
+NORM_INPUTS = 0  # Set to 1 to normalize inputs
+NORM_REWARDS = 0  # Set to 1 to normalize rewards
+TENSORBOARD = 0
 config = setup_config(NUM_STEPS, 'test')
 
 intersection_id = list(config['lane_phase_info'].keys())[0]
 phase_list = config['lane_phase_info'][intersection_id]['phase']
-state_size = len(config['lane_phase_info'][intersection_id]['start_lane']) + 1
-action_size = len(phase_list)
-# to help him (otherwise he has to learn that using only these 2 actions is always better)
-action_size = 2
-print("Action size = ", action_size)
 
 env = CityFlowEnv(config)
+action_size = 2
+# action_size = len(phase_list)
+state_size = len(env.reset())
 agent = Agent(state_size, action_size, seed=0)
 # load the weights from file
-agent.qnetwork_local.load_state_dict(torch.load('trained_models/checkpoint.pth'))
+checkpoint = torch.load("trained_models/{}/checkpoint.tar".format(args.exp_name))
+agent.qnetwork_local.load_state_dict(checkpoint['model_state_dict'])
 
+# add if statement and add saves to dqn_train
 # self.state_normalizer = load_pickle("data/{}/state_normalizer".format(self.config['scenario']))
 # self.reward_normalizer = load_pickle("data/{}/reward_normalizer".format(self.config['scenario']))
 
-# TODO necessary here?
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+log_dir = 'experiments/{}/test/tensorboard/'.format(args.exp_name) + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+if TENSORBOARD:
+    writer = SummaryWriter(log_dir)
 
-# env is deterministic right?
+
 def run_env():
+    stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}}
     state = env.reset()
     t = 0
-    last_action = agent.act(state) + 1  # phase_id starts from 1, yellow light is 0.
+    last_action = agent.act(state)
     while t < config['num_step']:
-        action = agent.act(state) + 1
+        action, q_values = agent.act(state)
+        # Take step in environment, add yellow light if action changes
         if action == last_action:
             state, reward, done, _ = env.step(action)
-        # if action changes, add a yellow light
         else:
             for _ in range(env.yellow_time):
-                env.step(0)  # required yellow time
+                env.step(-1)  # action -1 -> yellow light
+                stats['actions'][-1] += 1
                 t += 1
                 flag = (t >= config['num_step'])
                 if flag:
@@ -64,8 +70,24 @@ def run_env():
         last_action = action
         t += 1
 
+        # Save evaluation stats
+        stats['rewards'] += reward
+        stats['actions'][action] += 1
+        if TENSORBOARD:
+            writer.add_scalar('Reward', reward, t)
+            writer.add_scalar('Q value 1', q_values[0][0], t)
+
+        print('\rReward {:.2f}\tQ value_1 {:.2f}\tAction {}'.format(reward, q_values[0][0], action))
+
+    print('\rMean Reward {:.2f}\nActions on test flow {}'.format(stats['rewards']/(config['num_step'] - stats['actions'][-1]), list(stats['actions'].values())))
+
 
 run_env()
 
+evaluation_train = 'experiments/{}/train/evaluation.txt'.format(args.exp_name)
+f = open(evaluation_train, "r")
+print('Actions on train flow: ', f.read())
+
 env.log()
 evaluate_one_traffic(config, args.scenario, 'test', 'print')
+

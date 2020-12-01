@@ -15,7 +15,7 @@
       "road_0_1_0",
       "road_1_1_0"
     ],
-    "interval": 32.0,
+    "interval": 23.0,
     "startTime": 0,
     "endTime": 3600
   },
@@ -35,7 +35,7 @@
       "road_2_1_2",
       "road_1_1_2"
     ],
-    "interval": 5.0,
+    "interval": 10.0,
     "startTime": 0,
     "endTime": 3600
   },
@@ -55,7 +55,7 @@
       "road_1_0_1",
       "road_1_1_1"
     ],
-    "interval": 16.0,
+    "interval": 12.0,
     "startTime": 0,
     "endTime": 3600
   },
@@ -75,7 +75,7 @@
       "road_1_2_3",
       "road_1_1_3"
     ],
-    "interval": 23.0,
+    "interval": 8.0,
     "startTime": 0,
     "endTime": 3600
   }

@@ -1,5 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
+from collections import Counter
+import linecache
+import os
+import tracemalloc
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -17,31 +22,36 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-EPOCHS = 1500
-NUM_STEPS = 300
+TRAJECTORIES = 400
+NUM_STEPS = 600
 TRAINING_RUNS = 1
 NORM_TAU = 1e-3
 NORM_INPUTS = 0  # Set to 1 to normalize inputs
 NORM_REWARDS = 0  # Set to 1 to normalize rewards
 LOAD = 0  # Set to 1 to load checkpoint
 RANDOM_RUN = 0
+TENSORBOARD = 1
+LRS = [1e-2, 1e-3, 1e-4, 1e-5]
 
 config = setup_config(NUM_STEPS, 'train', NORM_INPUTS, NORM_REWARDS, NORM_TAU)
 intersection_id = list(config['lane_phase_info'].keys())[0]
 phase_list = config['lane_phase_info'][intersection_id]['phase']
-norm_state_size = len(config['lane_phase_info'][intersection_id]['start_lane'])
-# action_size = 2
-action_size = len(phase_list)
-state_size = norm_state_size + action_size  # Normalised part + one-hot vector
+action_size = 2
+# action_size = len(phase_list)
+state_size = len(CityFlowEnv(config).reset())
 best_travel_time = 100000
 
 args = parse_arguments()
 # om hyperparam search op te zetten: https://deeplizard.com/learn/video/ycxulUVoNbk
-writer = SummaryWriter('experiments/{}/tensorboard_5'.format(args.exp_name), comment=f' batch_size={11} lr={0.1}')
 
-# save network structure
-writer.add_graph(Agent(state_size, action_size, 0).qnetwork_local,
-                 torch.from_numpy(CityFlowEnv(config).reset()).unsqueeze(0).float())
+log_dir = 'experiments/{}/tensorboard/'.format(args.exp_name) + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+if TENSORBOARD:
+    writer = SummaryWriter(log_dir, comment=f' batch_size={11} lr={0.1}')
+
+if TENSORBOARD:
+    # save network structure
+    writer.add_graph(Agent(state_size, action_size, 0).qnetwork_local,
+                     torch.from_numpy(CityFlowEnv(config).reset()).unsqueeze(0).float())
 
 if LOAD == 1:
     checkpoint = torch.load("trained_models/{}/checkpoint.tar".format(args.exp_name))
@@ -49,7 +59,36 @@ if LOAD == 1:
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def dqn(n_episodes, eps_start=0.9, eps_end=0.1):
+def display_top(snapshot, key_type='lineno', limit=3):
+    snapshot = snapshot.filter_traces((
+        tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
+        tracemalloc.Filter(False, "<unknown>"),
+    ))
+    top_stats = snapshot.statistics(key_type)
+
+    print("Top %s lines" % limit)
+    for index, stat in enumerate(top_stats[:limit], 1):
+        frame = stat.traceback[0]
+        # replace "/path/to/module/file.py" with "module/file.py"
+        filename = os.sep.join(frame.filename.split(os.sep)[-2:])
+        print("#%s: %s:%s: %.1f KiB"
+              % (index, filename, frame.lineno, stat.size / 1024))
+        line = linecache.getline(frame.filename, frame.lineno).strip()
+        if line:
+            print('    %s' % line)
+
+    other = top_stats[limit:]
+    if other:
+        size = sum(stat.size for stat in other)
+        print("%s other: %.1f KiB" % (len(other), size / 1024))
+    total = sum(stat.size for stat in top_stats)
+    print("Total allocated size: %.1f KiB" % (total / 1024))
+
+
+tracemalloc.start()
+
+
+def dqn(n_trajactories, eps_start=0.9, eps_end=0.1):
     """Deep Q-Learning
 
     Params
@@ -60,7 +99,7 @@ def dqn(n_episodes, eps_start=0.9, eps_end=0.1):
     """
 
     agent = Agent(state_size, action_size, 0)
-    starting_epoch = 0
+    starting_trajectory = 0
     eps = eps_start
     global best_travel_time
 
@@ -72,23 +111,21 @@ def dqn(n_episodes, eps_start=0.9, eps_end=0.1):
         stats = checkpoint['stats']
         # TODO load eps, maar werkt t wel om eps zo laag te laten bij trainen? misschien kan dit loaden en verder trainen niet echt.
 
-    for epoch in range(starting_epoch + 1, n_episodes + 1):
+    for trajectory in range(starting_trajectory + 1, n_trajactories + 1):
         # Perform training run through environment
-        train_stats, _ = run_env(agent, eps, "train")
+        train_stats, _ = run_env(agent, eps, "train", trajectory)
 
         # Perform evaluation run through environment
-        stats, env = run_env(agent, 0, "eval")
+        stats, env = run_env(agent, 0, "eval", trajectory)
         stats['loss'] = train_stats['loss']
 
         # Decrease epsilon
-        decay = (eps_start - eps_end) / ((n_episodes - starting_epoch) * 0.8)
+        decay = (eps_start - eps_end) / ((n_trajactories - starting_trajectory) * 0.8)
         eps = max(eps - decay, eps_end)
-        writer.add_scalar('Eps', eps, epoch)
 
         # Decrease learning rate
         agent.lr_scheduler.step()
         lr = agent.lr_scheduler.get_last_lr()[0]
-        writer.add_scalar('LR', lr, epoch)
 
         # Save best model
         if stats['travel_time'] < best_travel_time:
@@ -103,20 +140,26 @@ def dqn(n_episodes, eps_start=0.9, eps_end=0.1):
             best_travel_time = stats['travel_time']
 
         print_every = 1
-        if epoch % print_every == print_every - 1:
+        if trajectory % print_every == print_every - 1:
             print('\rEpisode {}\tMean Reward{:.2f}\tLoss {:.0f}\tLearning rate: {:.2g}\tEpsilon  {:.2g}\t Action count {}'
-                  '\tTravel Time {:.0f}\tQ value size {:.0f}'.format(epoch, stats['rewards']/(NUM_STEPS - stats['actions'][0]), stats['loss'], lr,
+                  '\tTravel Time {:.0f}\tQ value size {:.0f}'.format(trajectory, stats['rewards']/(NUM_STEPS - stats['actions'][-1]), stats['loss'], lr,
                                                 eps,
                                                 list(stats['actions'].values()),
                                                 stats['travel_time'], np.mean(stats['q_values_size'])))
 
-        for name, weight in agent.qnetwork_local.named_parameters():
-            writer.add_histogram(name + '_qnetwork_local', weight, epoch)
-        for name, weight in agent.qnetwork_target.named_parameters():
-            writer.add_histogram(name + '_qnetwork_target', weight, epoch)
+        if TENSORBOARD:
+            writer.add_scalar('Eps', eps, trajectory)
+            writer.add_scalar('LR', lr, trajectory)
+            for name, weight in agent.qnetwork_local.named_parameters():
+                writer.add_histogram(name + '_qnetwork_local', weight, trajectory)
+            for name, weight in agent.qnetwork_target.named_parameters():
+                writer.add_histogram(name + '_qnetwork_target', weight, trajectory)
+
+    snapshot = tracemalloc.take_snapshot()
+    display_top(snapshot)
 
 
-def run_env(agent, eps, mode):
+def run_env(agent, eps, mode, epoch):
     """Run 1 episode through environment.
 
     Params
@@ -161,18 +204,20 @@ def run_env(agent, eps, mode):
         # Add to replay buffer and train
         if mode == "train":
             agent.step(state, action, reward, next_state, done)
-            writer.add_scalar('Loss', agent.loss, agent.training_step)
             stats['loss'] += agent.loss
-            agent.training_step += 1
+            if TENSORBOARD:
+                writer.add_scalar('Loss', agent.loss, agent.training_step)
+                agent.training_step += 1
 
-        # Save stats
+        # Save evaluation stats
         if mode == "eval":
-            writer.add_scalar('Reward', reward, agent.acting_step)
-            writer.add_histogram('Actions', action, agent.acting_step)
-            writer.add_histogram('Q values', q_values, agent.acting_step)
             stats['actions'][action] += 1
             stats['rewards'] += reward
-            agent.acting_step += 1
+            if TENSORBOARD:
+                writer.add_scalar('Reward', reward, agent.acting_step)
+                writer.add_histogram('Actions', action, agent.acting_step)
+                writer.add_histogram('Q values', q_values[0], agent.acting_step)
+                agent.acting_step += 1
 
         # if q_values is not None:
         #     diff_q_values.append(np.round(np.mean([abs(q_values[0][action] - q_values[0][j]) for j in
@@ -185,6 +230,13 @@ def run_env(agent, eps, mode):
         state = next_state
         last_action = action
         t += 1
+
+    # test_state = np.array([10, 2, 3, 7, 0, 1, 0, 0, 0, 0, 0, 0])
+    test_state = np.array([10, 2, 3, 7, 1, 0])
+    _, q_values = agent.act(test_state, 0)
+    if TENSORBOARD:
+        writer.add_scalar('Q value test state', q_values[0][0], epoch)
+        writer.add_histogram('Q values test state', q_values[0], epoch)
 
     stats['travel_time'] = env.get_average_travel_time()
     return stats, env
@@ -204,7 +256,7 @@ training_runs = []
 # als je deze gemiddeldes wil blijven bewaren moet je alles pas hierna naar de writer schrijven, en wat meer returnen.
 # of dit checken https://doneill612.github.io/Scalar-Summaries/
 for i in range(TRAINING_RUNS):
-    training_runs.append(dqn(EPOCHS))
+    training_runs.append(dqn(TRAJECTORIES))
 
 # Evaluate last run and make ready for cleaner visualisation
 evaluate_one_traffic(config, args.scenario, 'train', 'print')
