@@ -22,8 +22,8 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-TRAJECTORIES = 400
-NUM_STEPS = 600
+TRAJECTORIES = 800
+NUM_STEPS = 300
 TRAINING_RUNS = 1
 NORM_TAU = 1e-3
 NORM_INPUTS = 0  # Set to 1 to normalize inputs
@@ -31,7 +31,8 @@ NORM_REWARDS = 0  # Set to 1 to normalize rewards
 LOAD = 0  # Set to 1 to load checkpoint
 RANDOM_RUN = 0
 TENSORBOARD = 1
-LRS = [1e-2, 1e-3, 1e-4, 1e-5]
+# LRS = [1e-2, 1e-3, 1e-4, 1e-5]
+LRS = [1e-3]
 
 config = setup_config(NUM_STEPS, 'train', NORM_INPUTS, NORM_REWARDS, NORM_TAU)
 intersection_id = list(config['lane_phase_info'].keys())[0]
@@ -88,7 +89,7 @@ def display_top(snapshot, key_type='lineno', limit=3):
 tracemalloc.start()
 
 
-def dqn(n_trajactories, eps_start=0.9, eps_end=0.1):
+def dqn(n_trajactories, lr, eps_start=0.9, eps_end=0.1):
     """Deep Q-Learning
 
     Params
@@ -98,7 +99,7 @@ def dqn(n_trajactories, eps_start=0.9, eps_end=0.1):
         eps_end (float): minimum value of epsilon
     """
 
-    agent = Agent(state_size, action_size, 0)
+    agent = Agent(state_size, action_size, 0, lr)
     starting_trajectory = 0
     eps = eps_start
     global best_travel_time
@@ -141,7 +142,7 @@ def dqn(n_trajactories, eps_start=0.9, eps_end=0.1):
 
         print_every = 1
         if trajectory % print_every == print_every - 1:
-            print('\rEpisode {}\tMean Reward{:.2f}\tLoss {:.0f}\tLearning rate: {:.2g}\tEpsilon  {:.2g}\t Action count {}'
+            print('\rTrajactory {}\tMean Reward{:.2f}\tLoss {:.0f}\tLearning rate: {:.2g}\tEpsilon  {:.2g}\t Action count {}'
                   '\tTravel Time {:.0f}\tQ value size {:.0f}'.format(trajectory, stats['rewards']/(NUM_STEPS - stats['actions'][-1]), stats['loss'], lr,
                                                 eps,
                                                 list(stats['actions'].values()),
@@ -255,12 +256,14 @@ if RANDOM_RUN == 1:
 training_runs = []
 # als je deze gemiddeldes wil blijven bewaren moet je alles pas hierna naar de writer schrijven, en wat meer returnen.
 # of dit checken https://doneill612.github.io/Scalar-Summaries/
-for i in range(TRAINING_RUNS):
-    training_runs.append(dqn(TRAJECTORIES))
+for lr in LRS:
+    for i in range(TRAINING_RUNS):
+        training_runs.append(dqn(TRAJECTORIES, lr))
 
 # Evaluate last run and make ready for cleaner visualisation
 evaluate_one_traffic(config, args.scenario, 'train', 'print')
 
 # make sure that all pending events have been written to disk.
-writer.flush()
-writer.close()
+if TENSORBOARD:
+    writer.flush()
+    writer.close()

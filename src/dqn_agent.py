@@ -20,7 +20,6 @@ BUFFER_SIZE = 2000  # replay buffer size
 BATCH_SIZE = 64  # minibatch size
 GAMMA = 0.95  # discount factor
 TAU = 1e-3  # for soft update of target parameters
-LR = 1e-4  # learning rate
 LR_decay = 0.999  # learning rate decay
 LR_STEP_TIMES = 300
 UPDATE_EVERY = 5  # how often to update the local network
@@ -32,7 +31,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class Agent:
     """Interacts with and learns from environment."""
 
-    def __init__(self, state_size, action_size, seed):
+    def __init__(self, state_size, action_size, seed, lr=1e-3):
         """Initialize an Agent object.
 
         Params
@@ -50,7 +49,7 @@ class Agent:
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
         self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
 
-        self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
+        self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=lr)
         # self.optimizer = optim.SGD(self.qnetwork_local.parameters(), lr=LR, momentum=0.9)
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=LR_STEP_TIMES, gamma=0.5)
 
