@@ -10,7 +10,7 @@ from src.utility import *
 from src.sotl_run import run_sotl
 
 
-TRAJECTORIES = 1
+TRAJECTORIES = 3000
 # LRS = [1e-2, 1e-3, 1e-4, 1e-5]
 LRS = [1e-3]
 TRAIN = 1

@@ -75,8 +75,8 @@ def dqn(n_trajactories, config):
 
     intersection_id = list(config['lane_phase_info'].keys())[0]
     phase_list = config['lane_phase_info'][intersection_id]['phase']
-    action_size = 2
-    # action_size = len(phase_list)
+    # action_size = 2
+    action_size = len(phase_list)
     state_size = len(CityFlowEnv(config).reset())
     best_travel_time = 100000
 
@@ -225,9 +225,9 @@ def run_env(agent, eps, config, mode=None, epoch=0):
         last_action = action
         t += 1
 
-    # test_state = np.array([5, 3, 5, 1, 8, 2, 3, 5, 0, 1, 0, 0, 0, 0, 0, 0])
+    test_state = np.array([5, 3, 5, 1, 8, 2, 3, 5, 0, 1, 0, 0, 0, 0, 0, 0])
     # test_state = np.array([10, 2, 3, 7, 0, 1, 0, 0, 0, 0, 0, 0])
-    test_state = np.array([10, 2, 3, 7, 1, 0])
+    # test_state = np.array([10, 2, 3, 7, 1, 0])
     _, q_values = agent.act(test_state, 0)
     # todo return to other def
     # if TENSORBOARD:

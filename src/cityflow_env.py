@@ -59,8 +59,8 @@ class CityFlowEnv:
 
     def get_state(self):
         lane_vehicle_count = [self.eng.get_lane_vehicle_count()[lane] for lane in self.start_lane]
-        phases = np.zeros(2)
-        # phases = np.zeros(len(self.phase_list))
+        # phases = np.zeros(2)
+        phases = np.zeros(len(self.phase_list))
         phases[self.current_phase] = 1
 
         if self.config['normalize_input'] == 1:
