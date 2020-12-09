@@ -15,7 +15,7 @@
       "road_0_1_0",
       "road_1_1_0"
     ],
-    "interval": 10.0,
+    "interval": 35.0,
     "startTime": 0,
     "endTime": 3600
   },
@@ -55,7 +55,7 @@
       "road_1_0_1",
       "road_1_1_1"
     ],
-    "interval": 30.0,
+    "interval": 40.0,
     "startTime": 0,
     "endTime": 3600
   },
@@ -75,7 +75,7 @@
       "road_1_2_3",
       "road_1_1_3"
     ],
-    "interval": 8.0,
+    "interval": 10.0,
     "startTime": 0,
     "endTime": 3600
   },
@@ -95,7 +95,7 @@
       "road_0_1_0",
       "road_1_1_1"
     ],
-    "interval": 15.0,
+    "interval": 20.0,
     "startTime": 0,
     "endTime": 3600
   },
@@ -115,7 +115,7 @@
       "road_2_1_2",
       "road_1_1_3"
     ],
-    "interval": 22.0,
+    "interval": 35.0,
     "startTime": 0,
     "endTime": 3600
   },
@@ -135,7 +135,7 @@
       "road_1_2_3",
       "road_1_1_0"
     ],
-    "interval": 36.0,
+    "interval": 13.0,
     "startTime": 0,
     "endTime": 3600
   },
@@ -155,7 +155,7 @@
       "road_1_0_1",
       "road_1_1_2"
     ],
-    "interval": 4.0,
+    "interval": 23.0,
     "startTime": 0,
     "endTime": 3600
   }

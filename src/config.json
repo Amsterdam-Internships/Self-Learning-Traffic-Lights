@@ -6,7 +6,7 @@
 	"flowFile": "flow.json",
 	"rlTrafficLight": true,
 	"laneChange": false,
-	"saveReplay": true,
+	"saveReplay": false,
 	"roadnetLogFile": "replay_roadnet.json",
 	"replayLogFile": "replay.txt",
 	"root": "/Users/sierkkanis/Documents/MscAI/Thesis/Code/Eigen"

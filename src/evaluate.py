@@ -10,23 +10,23 @@ Source: https://github.com/tianrang-intelligence/TSCC2019
 """
 
 with open('src/config.json') as json_file:
-    config = json.load(json_file)
+    config2 = json.load(json_file)
 
 
 def main():
     args = parse_arguments()
-    sim_setting = config
+    sim_setting = config2
     sim_setting["num_step"] = 300
     evaluate_one_traffic(sim_setting, args.scenario)
 
 
-def evaluate_one_traffic(dic_sim_setting, scenario, mode='train', printing='no_printing'):
+def evaluate_one_traffic(config, scenario, mode='train', printing='no_printing'):
     args = parse_arguments()
-    plan_file = "experiments/{}/{}/signal_plan_template.txt".format(args.exp_name, mode)
-    out_file = "experiments/{}/{}/evaluation.txt".format(args.exp_name, mode)
+    plan_file = "experiments/{}/{}/{}/signal_plan_template.txt".format(args.exp_name, mode, config['hyperparams'])
+    out_file = "experiments/{}/{}/{}/evaluation.txt".format(args.exp_name, mode, config['hyperparams'])
 
-    if check(plan_file, dic_sim_setting["num_step"]):
-        tt, actions = cal_travel_time(dic_sim_setting, plan_file)
+    if check(plan_file, config["num_step"]):
+        tt, actions = cal_travel_time(config, plan_file)
         if printing == 'print':
             print("====================== travel time ======================")
             print("scenario_{0}: {1:.2f} s".format(scenario, tt))
@@ -34,7 +34,7 @@ def evaluate_one_traffic(dic_sim_setting, scenario, mode='train', printing='no_p
 
             # change to baseline of fixed or sotl later. if score is > 0 you approved by that margin,
             # if score is <0 you got worse.
-            b = 62.36  # SOTL average travel time for 1x1 straight
+            b = 58.88  # SOTL tt for 6.0.real_1x1_straight
             # b = 77.89  # SOTL average travel time for 1x1
             score = (b - tt)/b
 
@@ -51,7 +51,12 @@ def evaluate_one_traffic(dic_sim_setting, scenario, mode='train', printing='no_p
 
 # this can maybe be changed to record travel time during simulation, to avoid doing it twice (not an issue if fast)
 def cal_travel_time(dic_sim_setting, plan_file):
-    eng = cityflow.Engine("src/config_args.json", thread_num=1)
+    dic_sim_setting['saveReplay'] = True
+    # write to file so the engine can open it.
+    with open('src/config_args2.json', 'w') as outfile:
+        json.dump(dic_sim_setting, outfile)
+
+    eng = cityflow.Engine("src/config_args2.json", thread_num=1)
 
     plan = pd.read_csv(plan_file, sep="\t", header=0, dtype=int)
     intersection_id = plan.columns[0]

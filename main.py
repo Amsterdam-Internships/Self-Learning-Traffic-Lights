@@ -1,10 +1,10 @@
 """
-Run this file to run the model.
+Run this file to load a model and test it's performance.
 """
 
 
 def main():
-    print('test')
+    print('Hello')
 
 
 if __name__ == "__main__":

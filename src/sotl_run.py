@@ -12,8 +12,7 @@ Source:https://github.com/tianrang-intelligence/TSCC2019
 """
 
 args = parse_arguments()
-NUM_STEPS = 300
-config = setup_config(NUM_STEPS, 'train', 0, 0, 0)
+config = setup_config('train', 'sotl')
 
 env = CityFlowEnv(config)
 
@@ -27,8 +26,8 @@ yellow_time = 5
 # phase_log = []
 
 phi = 20
-min_green_vehicle = 2
-max_red_vehicle = 5
+min_green_vehicle = 10 # this doesnt have any effect for some reason (maybe because of the 1 of max_red)
+max_red_vehicle = 1
 action = phase_list[0]
 
 intersection_id = list(lane_phase_info.keys())[0]
@@ -43,14 +42,12 @@ def choose_action(state):
             [state["lane_waiting_vehicle_count"][i] for i in phase_startLane_mapping[cur_phase+1]])
         num_red_vehicle = sum([state["lane_waiting_vehicle_count"][i] for i in
                                lane_phase_info[intersection_id]["start_lane"]]) - num_green_vehicle
-        print(num_green_vehicle, num_red_vehicle)
         if num_green_vehicle <= min_green_vehicle and num_red_vehicle > max_red_vehicle:
-            if cur_phase == len(phase_list)-1:
-            # if cur_phase == 1:  # use if only 2 actions (because it goes through full action cycle)
+            # if cur_phase == len(phase_list)-1:
+            if cur_phase == 1:  # use if only 2 actions (because it goes through full action cycle)
                 action = 0
             else:
                 action += 1
-
 
 
 def run_sotl():
@@ -77,9 +74,5 @@ def run_sotl():
             env.step(action)
         last_action = action
         t += 1
-
-
-run_sotl()
-# evaluate last run and make ready for cleaner visualisation
-env.log()
-evaluate_one_traffic(config, args.scenario, 'train', 'print')
+    env.log()
+    evaluate_one_traffic(config, args.scenario, 'sotl', 'print')

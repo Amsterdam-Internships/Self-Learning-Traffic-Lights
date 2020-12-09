@@ -21,7 +21,7 @@ BATCH_SIZE = 64  # minibatch size
 GAMMA = 0.95  # discount factor
 TAU = 1e-3  # for soft update of target parameters
 LR_decay = 0.999  # learning rate decay
-LR_STEP_TIMES = 300
+LR_STEP_TIMES = 800
 UPDATE_EVERY = 5  # how often to update the local network
 FREEZE_TARGET = 10000  # how often to replace the target network
 

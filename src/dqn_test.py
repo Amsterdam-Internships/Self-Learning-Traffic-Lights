@@ -29,6 +29,7 @@ env = CityFlowEnv(config)
 action_size = 2
 # action_size = len(phase_list)
 state_size = len(env.reset())
+print(state_size)
 agent = Agent(state_size, action_size, seed=0)
 # load the weights from file
 checkpoint = torch.load("trained_models/{}/checkpoint.tar".format(args.exp_name))
@@ -52,6 +53,7 @@ def run_env():
     last_action = agent.act(state)
     while t < config['num_step']:
         action, q_values = agent.act(state)
+        print(state)
         # Take step in environment, add yellow light if action changes
         if action == last_action:
             state, reward, done, _ = env.step(action)

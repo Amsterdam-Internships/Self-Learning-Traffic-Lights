@@ -85,7 +85,7 @@ def save_plots(name):
     os.chdir("../")
 
 
-def setup_config(num_steps, mode, norm_inputs=0, norm_rewards=0, norm_tau=1):
+def setup_config(data_set_mode, experiment_mode, lr=0, norm_inputs=0, norm_rewards=0):
     """Update the configuration file
 
     Params
@@ -97,23 +97,24 @@ def setup_config(num_steps, mode, norm_inputs=0, norm_rewards=0, norm_tau=1):
         norm_tau (float):
     """
     args = parse_arguments()
-
     # update the config file with arguments
     with open('src/config.json') as json_file:
         config = json.load(json_file)
 
-    config["flowFile"] = "data/{}/{}/{}".format(args.scenario, mode, config["flowFile"])
-    config["roadnetFile"] = "data/{}/{}/{}".format(args.scenario, mode, config["roadnetFile"])
+    config['hyperparams'] = "lr=" + str(lr) + "_norm_rewards=" + str(norm_rewards)
+    config["flowFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["flowFile"])
+    config["roadnetFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["roadnetFile"])
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
-    config["roadnetLogFile"] = "experiments/{}/{}/{}".format(args.exp_name, mode, config["roadnetLogFile"])
-    config["replayLogFile"] = "experiments/{}/{}/{}".format(args.exp_name, mode, config["replayLogFile"])
-    config['num_step'] = num_steps
+    config["roadnetLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'], config["roadnetLogFile"])
+    config["replayLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'], config["replayLogFile"])
+    config['num_step'] = 300
     config['scenario'] = args.scenario
-    config['mode'] = mode
+    config['mode'] = experiment_mode
     config['exp_name'] = args.exp_name
     config['normalize_input'] = norm_inputs
     config['normalize_rewards'] = norm_rewards
-    config['norm_tau'] = norm_tau
+    config['norm_tau'] = 1e-3
+    config['lr'] = lr
 
     path = "experiments/{}".format(config['exp_name'])
     if not os.path.exists(path):
@@ -128,7 +129,21 @@ def setup_config(num_steps, mode, norm_inputs=0, norm_rewards=0, norm_tau=1):
         except OSError:
             print("Creation of the directory %s failed" % path)
 
+    path = "experiments/{}/{}/{}".format(config['exp_name'], config["mode"], config['hyperparams'])
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
+
     path = "trained_models/{}".format(args.exp_name)
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
+
+    path = "trained_models/{}/{}".format(args.exp_name, config['hyperparams'])
     if not os.path.exists(path):
         try:
             os.mkdir(path)

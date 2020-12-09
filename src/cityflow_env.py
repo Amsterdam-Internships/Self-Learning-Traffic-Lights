@@ -104,9 +104,12 @@ class CityFlowEnv:
                 os.mkdir(path)
             except OSError:
                 print("Creation of the directory %s failed" % path)
+
+        # maybe path should still be created
+        path = "experiments/{}/{}/{}".format(self.config['exp_name'], self.config["mode"], self.config['hyperparams'])
         df.to_csv(os.path.join(path, 'signal_plan_template.txt'), index=None)
 
-        path = "trained_models/{}".format(self.config["exp_name"])
+        path = "trained_models/{}/{}".format(self.config["exp_name"], self.config['hyperparams'])
         if not os.path.exists(path):
             try:
                 os.mkdir(path)
