@@ -28,6 +28,8 @@ args = parse_arguments()
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+print("Running on device: ", device)
+
 
 def display_top(snapshot, key_type='lineno', limit=3):
     snapshot = snapshot.filter_traces((
