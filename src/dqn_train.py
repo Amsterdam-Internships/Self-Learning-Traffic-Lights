@@ -19,7 +19,7 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 
 LOAD = 0  # Set to 1 to load checkpoint
 RANDOM_RUN = 0   # (watch out, could overwrite replaylog of training)
-TENSORBOARD = 0
+TENSORBOARD = 1
 EPS_START = 0.9
 EPS_END = 0.1
 
