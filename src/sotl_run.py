@@ -1,6 +1,3 @@
-import json
-import os
-
 from src.cityflow_env import CityFlowEnv
 from src.utility import *
 from src.evaluate import *

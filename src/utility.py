@@ -4,7 +4,6 @@ import os
 import matplotlib.pyplot as plt
 import pickle
 import numpy as np
-import random
 
 """
 This file contains various helper methods.

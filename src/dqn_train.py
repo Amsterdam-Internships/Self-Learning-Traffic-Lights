@@ -1,12 +1,7 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import datetime
-from collections import Counter
 import linecache
-import os
 import tracemalloc
 
-import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from src.cityflow_env import CityFlowEnv
@@ -24,7 +19,7 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 
 LOAD = 0  # Set to 1 to load checkpoint
 RANDOM_RUN = 0   # (watch out, could overwrite replaylog of training)
-TENSORBOARD = 1
+TENSORBOARD = 0
 EPS_START = 0.9
 EPS_END = 0.1
 
