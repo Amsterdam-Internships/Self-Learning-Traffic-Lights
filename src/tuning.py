@@ -1,6 +1,7 @@
 from src.dqn_train import dqn
 from src.utility import *
 from src.sotl_run import run_sotl
+import torch
 
 """
 This file contains the hyper parameter loops.
@@ -12,6 +13,10 @@ LRS = [1e-3]
 TRAIN = 1
 
 args = parse_arguments()
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+print("Running on device: ", device)
 
 
 def main():

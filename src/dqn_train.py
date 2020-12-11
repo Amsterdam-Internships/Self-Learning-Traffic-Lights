@@ -26,9 +26,8 @@ EPS_END = 0.1
 args = parse_arguments()
 # om hyperparam search op te zetten: https://deeplizard.com/learn/video/ycxulUVoNbk
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-print("Running on device: ", device)
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# print("Running on device: ", device)
 
 
 def display_top(snapshot, key_type='lineno', limit=3):
@@ -81,8 +80,8 @@ def dqn(n_trajactories, config):
     if TENSORBOARD:
         writer = SummaryWriter(log_dir, comment=f' batch_size={11} lr={0.1}')
         # save network structure
-        writer.add_graph(Agent(state_size, action_size, 0).qnetwork_local,
-                         torch.from_numpy(CityFlowEnv(config).reset()).unsqueeze(0).float())
+        # writer.add_graph(Agent(state_size, action_size, 0).qnetwork_local,
+        #                  torch.from_numpy(CityFlowEnv(config).reset()).unsqueeze(0).float().to(device))
 
     agent = Agent(state_size, action_size, 0, config['lr'])
     starting_trajectory = 0
