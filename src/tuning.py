@@ -7,7 +7,7 @@ import torch
 This file contains the hyper parameter loops.
 """
 
-TRAJECTORIES = 6000
+TRAJECTORIES = 30
 # LRS = [1e-2, 1e-3, 1e-4, 1e-5]
 LRS = [1e-3]
 TRAIN = 1
