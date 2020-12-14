@@ -114,7 +114,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs
     config['normalize_rewards'] = norm_rewards
     config['norm_tau'] = 1e-3
     config['lr'] = lr
-    config[batch_size] = batch_size
+    config['batch_size'] = batch_size
 
     path = "experiments/{}".format(config['exp_name'])
     if not os.path.exists(path):

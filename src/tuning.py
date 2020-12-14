@@ -22,6 +22,7 @@ hyper_parameters = dict(
     batch_size=BATCH_SIZE
 )
 param_values = [v for v in hyper_parameters.values()]
+product = [[0.01, 32], [0.01, 64], [0.01, 128], [0.001, 16], [0.001, 32], [0.001, 64], [0.001, 128], [0.0001, 16], [0.0001, 32], [0.0001, 64]]
 
 # args = parse_arguments()
 
@@ -31,7 +32,7 @@ print("Running on device: ", device)
 
 def main():
     if TRAIN:
-        for lr, batch_size in product(*param_values):
+        for lr, batch_size in product:
             config = setup_config('train', 'train', lr, batch_size, norm_inputs=0, norm_rewards=0)
             dqn(TRAJECTORIES, config)
     run_sotl()

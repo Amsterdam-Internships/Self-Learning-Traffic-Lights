@@ -83,7 +83,7 @@ def dqn(n_trajactories, config):
         # writer.add_graph(Agent(state_size, action_size, 0).qnetwork_local,
         #                  torch.from_numpy(CityFlowEnv(config).reset()).unsqueeze(0).float().to(device))
 
-    agent = Agent(state_size, action_size, 0, config['lr'])
+    agent = Agent(state_size, action_size, 0, config['lr'], config['batch_size'])
     starting_trajectory = 0
     eps = EPS_START
 
@@ -126,8 +126,8 @@ def dqn(n_trajactories, config):
 
         print_every = 1
         if trajectory % print_every == print_every - 1:
-            print('\rTrajactory {}\tMean Reward{:.2f}\tLoss {:.0f}\tLearning rate: {:.2g}\tEpsilon  {:.2g}\t Action count {}'
-                  '\tTravel Time {:.0f}\tQ value size {:.0f}'.format(trajectory, stats['rewards']/(config['num_step'] - stats['actions'][-1]), stats['loss'], lr,
+            print('\rTrajactory {}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tEpsilon  {:.2g}\t Action count {}'
+                  '\tTravel Time {:.0f}\tQ value size {:.0f}'.format(trajectory, stats['rewards']/(config['num_step'] - stats['actions'][-1]), config['batch_size'], lr,
                                                 eps,
                                                 list(stats['actions'].values()),
                                                 stats['travel_time'], np.mean(stats['q_values_size'])))
