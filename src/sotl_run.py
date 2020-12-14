@@ -23,8 +23,8 @@ yellow_time = 5
 # phase_log = []
 
 phi = 20
-min_green_vehicle = 10 # this doesnt have any effect for some reason (maybe because of the 1 of max_red)
-max_red_vehicle = 1
+min_green_vehicle = 1 # this doesnt have any effect for some reason (maybe because of the 1 of max_red)
+max_red_vehicle = 2
 action = phase_list[0]
 
 intersection_id = list(lane_phase_info.keys())[0]
@@ -40,8 +40,8 @@ def choose_action(state):
         num_red_vehicle = sum([state["lane_waiting_vehicle_count"][i] for i in
                                lane_phase_info[intersection_id]["start_lane"]]) - num_green_vehicle
         if num_green_vehicle <= min_green_vehicle and num_red_vehicle > max_red_vehicle:
-            # if cur_phase == len(phase_list)-1:
-            if cur_phase == 1:  # use if only 2 actions (because it goes through full action cycle)
+            if cur_phase == len(phase_list)-1:
+            # if cur_phase == 1:  # use if only 2 actions (because it goes through full action cycle)
                 action = 0
             else:
                 action += 1

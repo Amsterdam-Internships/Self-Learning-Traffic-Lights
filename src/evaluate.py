@@ -34,8 +34,9 @@ def evaluate_one_traffic(config, scenario, mode='train', printing='no_printing')
 
             # change to baseline of fixed or sotl later. if score is > 0 you approved by that margin,
             # if score is <0 you got worse.
-            b = 58.88  # SOTL tt for 6.0.real_1x1_straight
+            # b = 58.88  # SOTL tt for 6.0.real_1x1_straight
             # b = 77.89  # SOTL average travel time for 1x1
+            b = 89.66  # SOTL tt 7.0.real_1x1_turns
             score = (b - tt)/b
 
             print("====================== score ======================")

@@ -84,7 +84,7 @@ def save_plots(name):
     os.chdir("../")
 
 
-def setup_config(data_set_mode, experiment_mode, lr=0, norm_inputs=0, norm_rewards=0):
+def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs=0, norm_rewards=0):
     """Update the configuration file
 
     Params
@@ -100,7 +100,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, norm_inputs=0, norm_rewar
     with open('src/config.json') as json_file:
         config = json.load(json_file)
 
-    config['hyperparams'] = "lr=" + str(lr) + "_norm_rewards=" + str(norm_rewards)
+    config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "_norm_rewards=" + str(norm_rewards)
     config["flowFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["flowFile"])
     config["roadnetFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["roadnetFile"])
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
@@ -114,6 +114,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, norm_inputs=0, norm_rewar
     config['normalize_rewards'] = norm_rewards
     config['norm_tau'] = 1e-3
     config['lr'] = lr
+    config[batch_size] = batch_size
 
     path = "experiments/{}".format(config['exp_name'])
     if not os.path.exists(path):

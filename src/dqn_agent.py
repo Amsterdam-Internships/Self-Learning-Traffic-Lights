@@ -128,11 +128,11 @@ class Agent:
         # Update target network
         self.soft_update(TAU)
 
-        # Update target network every FREEZE_TARGET time steps.
-        self.update_step = (self.update_step + 1) % FREEZE_TARGET
-        if self.update_step == 0:
-            self.qnetwork_target.load_state_dict(self.qnetwork_local.state_dict())
-            print("UPDATE TARGET NETWORK")
+        # # Update target network every FREEZE_TARGET time steps.
+        # self.update_step = (self.update_step + 1) % FREEZE_TARGET
+        # if self.update_step == 0:
+        #     self.qnetwork_target.load_state_dict(self.qnetwork_local.state_dict())
+        #     print("UPDATE TARGET NETWORK")
 
     def soft_update(self, tau):
         """Soft update model parameters.
