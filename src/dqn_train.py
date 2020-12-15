@@ -24,39 +24,6 @@ EPS_START = 0.9
 EPS_END = 0.1
 
 args = parse_arguments()
-# om hyperparam search op te zetten: https://deeplizard.com/learn/video/ycxulUVoNbk
-
-# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-# print("Running on device: ", device)
-
-
-def display_top(snapshot, key_type='lineno', limit=3):
-    snapshot = snapshot.filter_traces((
-        tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
-        tracemalloc.Filter(False, "<unknown>"),
-    ))
-    top_stats = snapshot.statistics(key_type)
-
-    print("Top %s lines" % limit)
-    for index, stat in enumerate(top_stats[:limit], 1):
-        frame = stat.traceback[0]
-        # replace "/path/to/module/file.py" with "module/file.py"
-        filename = os.sep.join(frame.filename.split(os.sep)[-2:])
-        print("#%s: %s:%s: %.1f KiB"
-              % (index, filename, frame.lineno, stat.size / 1024))
-        line = linecache.getline(frame.filename, frame.lineno).strip()
-        if line:
-            print('    %s' % line)
-
-    other = top_stats[limit:]
-    if other:
-        size = sum(stat.size for stat in other)
-        print("%s other: %.1f KiB" % (len(other), size / 1024))
-    total = sum(stat.size for stat in top_stats)
-    print("Total allocated size: %.1f KiB" % (total / 1024))
-
-
-tracemalloc.start()
 
 
 def dqn(n_trajactories, config):
@@ -69,23 +36,25 @@ def dqn(n_trajactories, config):
         eps_end (float): minimum value of epsilon
     """
 
+    env = CityFlowEnv(config)
     intersection_id = list(config['lane_phase_info'].keys())[0]
     phase_list = config['lane_phase_info'][intersection_id]['phase']
     # action_size = 2
     action_size = len(phase_list)
-    state_size = len(CityFlowEnv(config).reset())
+    state_size = len(env.reset())
     best_travel_time = 100000
+    starting_trajectory = 0
+    eps = EPS_START
 
-    log_dir = 'experiments/{}/tensorboard/{}'.format(args.exp_name, config['hyperparams']) + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    agent = Agent(state_size, action_size, 0, config['lr'], config['batch_size'])
+
     if TENSORBOARD:
+        log_dir = 'experiments/{}/tensorboard/{}'.format(args.exp_name, config[
+            'hyperparams']) + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         writer = SummaryWriter(log_dir, comment=f' batch_size={11} lr={0.1}')
         # save network structure
         # writer.add_graph(Agent(state_size, action_size, 0).qnetwork_local,
         #                  torch.from_numpy(CityFlowEnv(config).reset()).unsqueeze(0).float().to(device))
-
-    agent = Agent(state_size, action_size, 0, config['lr'], config['batch_size'])
-    starting_trajectory = 0
-    eps = EPS_START
 
     # Load saved checkpoint
     if LOAD == 1:
@@ -98,10 +67,10 @@ def dqn(n_trajactories, config):
 
     for trajectory in range(starting_trajectory + 1, n_trajactories + 1):
         # Perform training run through environment
-        train_stats, _ = run_env(agent, eps, config, "train", trajectory)
+        train_stats = run_env(agent, eps, config, env, "train", trajectory)
 
         # Perform evaluation run through environment
-        stats, env = run_env(agent, 0, config, "eval", trajectory)
+        stats = run_env(agent, 0, config, env, "eval", trajectory)
         stats['loss'] = train_stats['loss']
 
         # Decrease epsilon
@@ -127,7 +96,7 @@ def dqn(n_trajactories, config):
         print_every = 10
         if trajectory % print_every == print_every - 1:
             print('\rTrajactory {}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tEpsilon  {:.2g}\t Action count {}'
-                  '\tTravel Time {:.0f}\tQ value size {:.0f}'.format(trajectory, stats['rewards']/(config['num_step'] - stats['actions'][-1]), config['batch_size'], lr,
+                  '\tTravel Time {:.0f}\tQ value size {:.0f}'.format(trajectory + 1, stats['rewards']/(config['num_step'] - stats['actions'][-1]), config['batch_size'], lr,
                                                 eps,
                                                 list(stats['actions'].values()),
                                                 stats['travel_time'], np.mean(stats['q_values_size'])))
@@ -141,12 +110,8 @@ def dqn(n_trajactories, config):
                     writer.add_histogram(name + '_qnetwork_target', weight, trajectory)
 
                 writer.add_scalar('Average Reward', stats['rewards']/(config['num_step'] - stats['actions'][-1]), trajectory)
-                # todo add actions to 1 scalars plot, histgram doesnt show anything
-                # writer.add_histogram('Actions', action, trajectory)
+                writer.add_scalar('Average Travel Time', stats['travel_time'], trajectory)
                 writer.add_scalar('Loss', stats['loss'], trajectory)
-
-    snapshot = tracemalloc.take_snapshot()
-    display_top(snapshot)
 
     # make sure that all pending events have been written to disk.
     if TENSORBOARD:
@@ -157,7 +122,7 @@ def dqn(n_trajactories, config):
     evaluate_one_traffic(config, args.scenario, 'train', 'print')
 
 
-def run_env(agent, eps, config, mode=None, epoch=0):
+def run_env(agent, eps, config, env, mode=None, epoch=0):
     """Run 1 episode through environment.
 
     Params
@@ -174,7 +139,6 @@ def run_env(agent, eps, config, mode=None, epoch=0):
     # size_q_values = []
 
     t = 0
-    env = CityFlowEnv(config)
     state = env.reset()
     last_action, _ = agent.act(state, eps)
 
@@ -231,7 +195,7 @@ def run_env(agent, eps, config, mode=None, epoch=0):
     #     writer.add_histogram('Q values test state', q_values[0], epoch)
 
     stats['travel_time'] = env.get_average_travel_time()
-    return stats, env
+    return stats
 
 
 # # Perform random run through environment before training
