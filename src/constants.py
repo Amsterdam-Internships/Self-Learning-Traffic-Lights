@@ -1,1 +1,0 @@
-ROOT_DIR = "/Users/sierkkanis/Documents/MscAI/Thesis/Code/Eigen"
