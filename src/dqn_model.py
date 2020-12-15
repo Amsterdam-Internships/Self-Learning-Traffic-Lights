@@ -28,12 +28,12 @@ class QNetwork(nn.Module):
         """
         super(QNetwork, self).__init__()  # calls __init__ method of nn.Module class
         self.seed = torch.manual_seed(seed)
-        # self.fc1 = weight_norm(nn.Linear(state_size, fc1_unit), name='weight')
-        # self.fc2 = weight_norm(nn.Linear(fc1_unit, fc2_unit), name='weight')
-        # self.fc3 = weight_norm(nn.Linear(fc2_unit, action_size), name='weight')
-        self.fc1 = nn.Linear(state_size, fc1_unit)
-        self.fc2 = nn.Linear(fc1_unit, fc2_unit)
-        self.fc3 = nn.Linear(fc2_unit, action_size)
+        self.fc1 = weight_norm(nn.Linear(state_size, fc1_unit), name='weight')
+        self.fc2 = weight_norm(nn.Linear(fc1_unit, fc2_unit), name='weight')
+        self.fc3 = weight_norm(nn.Linear(fc2_unit, action_size), name='weight')
+        # self.fc1 = nn.Linear(state_size, fc1_unit)
+        # self.fc2 = nn.Linear(fc1_unit, fc2_unit)
+        # self.fc3 = nn.Linear(fc2_unit, action_size)
 
     def forward(self, x):
         """

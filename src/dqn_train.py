@@ -124,7 +124,7 @@ def dqn(n_trajactories, config):
             env.log()
             best_travel_time = stats['travel_time']
 
-        print_every = 1
+        print_every = 10
         if trajectory % print_every == print_every - 1:
             print('\rTrajactory {}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tEpsilon  {:.2g}\t Action count {}'
                   '\tTravel Time {:.0f}\tQ value size {:.0f}'.format(trajectory, stats['rewards']/(config['num_step'] - stats['actions'][-1]), config['batch_size'], lr,
@@ -132,18 +132,18 @@ def dqn(n_trajactories, config):
                                                 list(stats['actions'].values()),
                                                 stats['travel_time'], np.mean(stats['q_values_size'])))
 
-        if TENSORBOARD:
-            writer.add_scalar('Eps', eps, trajectory)
-            writer.add_scalar('LR', lr, trajectory)
-            for name, weight in agent.qnetwork_local.named_parameters():
-                writer.add_histogram(name + '_qnetwork_local', weight, trajectory)
-            for name, weight in agent.qnetwork_target.named_parameters():
-                writer.add_histogram(name + '_qnetwork_target', weight, trajectory)
+            if TENSORBOARD:
+                writer.add_scalar('Eps', eps, trajectory)
+                writer.add_scalar('LR', lr, trajectory)
+                for name, weight in agent.qnetwork_local.named_parameters():
+                    writer.add_histogram(name + '_qnetwork_local', weight, trajectory)
+                for name, weight in agent.qnetwork_target.named_parameters():
+                    writer.add_histogram(name + '_qnetwork_target', weight, trajectory)
 
-            writer.add_scalar('Average Reward', stats['rewards']/(config['num_step'] - stats['actions'][-1]), trajectory)
-            # todo add actions to 1 scalars plot, histgram doesnt show anything
-            # writer.add_histogram('Actions', action, trajectory)
-            writer.add_scalar('Loss', stats['loss'], trajectory)
+                writer.add_scalar('Average Reward', stats['rewards']/(config['num_step'] - stats['actions'][-1]), trajectory)
+                # todo add actions to 1 scalars plot, histgram doesnt show anything
+                # writer.add_histogram('Actions', action, trajectory)
+                writer.add_scalar('Loss', stats['loss'], trajectory)
 
     snapshot = tracemalloc.take_snapshot()
     display_top(snapshot)
@@ -221,10 +221,10 @@ def run_env(agent, eps, config, mode=None, epoch=0):
         last_action = action
         t += 1
 
-    test_state = np.array([5, 3, 5, 1, 8, 2, 3, 5, 0, 1, 0, 0, 0, 0, 0, 0])
+    # test_state = np.array([5, 3, 5, 1, 8, 2, 3, 5, 0, 1, 0, 0, 0, 0, 0, 0])
     # test_state = np.array([10, 2, 3, 7, 0, 1, 0, 0, 0, 0, 0, 0])
     # test_state = np.array([10, 2, 3, 7, 1, 0])
-    _, q_values = agent.act(test_state, 0)
+    # _, q_values = agent.act(test_state, 0)
     # todo return to other def
     # if TENSORBOARD:
     #     writer.add_scalar('Q value test state', q_values[0][0], epoch)

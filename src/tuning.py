@@ -10,7 +10,7 @@ from src.sotl_run import run_sotl
 This file contains the hyper parameter loops.
 """
 
-TRAJECTORIES = 3000
+TRAJECTORIES = 1
 
 # LRS = [1e-3]
 LRS = [1e-2, 1e-3, 1e-4, 1e-5]
@@ -23,6 +23,7 @@ hyper_parameters = dict(
 )
 param_values = [v for v in hyper_parameters.values()]
 product = [[0.01, 32], [0.01, 64], [0.01, 128], [0.001, 16], [0.001, 32], [0.001, 64], [0.001, 128], [0.0001, 16], [0.0001, 32], [0.0001, 64]]
+# product = [[0.01, 128], [0.03, 128], [0.001, 32], [0.001, 64], [0.0001, 32], [0.0001, 64]]
 
 # args = parse_arguments()
 
