@@ -27,7 +27,7 @@ args = parse_arguments()
 
 
 def dqn(n_trajactories, config):
-    """Deep Q-Learning
+    """ Deep Q-Learning
 
     Params
     ======
@@ -52,11 +52,8 @@ def dqn(n_trajactories, config):
         log_dir = 'experiments/{}/tensorboard/{}'.format(args.exp_name, config[
             'hyperparams']) + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         writer = SummaryWriter(log_dir, comment=f' batch_size={11} lr={0.1}')
-        # save network structure
-        # writer.add_graph(Agent(state_size, action_size, 0).qnetwork_local,
-        #                  torch.from_numpy(CityFlowEnv(config).reset()).unsqueeze(0).float().to(device))
 
-    # Load saved checkpoint
+    # Load saved checkpoint (because of epsilon not in use)
     if LOAD == 1:
         checkpoint = torch.load("trained_models/{}/checkpoint.tar".format(args.exp_name))
         agent.qnetwork_local.load_state_dict(checkpoint['model_state_dict'])
@@ -93,8 +90,8 @@ def dqn(n_trajactories, config):
             env.log()
             best_travel_time = stats['travel_time']
 
-        print_every = 10
-        if trajectory % print_every == print_every - 1:
+        show_stats_every = 10
+        if trajectory % show_stats_every == show_stats_every - 1:
             print('\rTrajactory {}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tEpsilon  {:.2g}\t Action count {}'
                   '\tTravel Time {:.0f}\tQ value size {:.0f}'.format(trajectory + 1, stats['rewards']/(config['num_step'] - stats['actions'][-1]), config['batch_size'], lr,
                                                 eps,
@@ -150,8 +147,10 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
         if action == last_action:
             next_state, reward, done, _ = env.step(action)
         else:
+            reward = 0
             for _ in range(env.yellow_time):
-                env.step(-1)  # action -1 -> yellow light
+                _, sub_reward, _, _ = env.step(-1)  # action -1 -> yellow light
+                reward += sub_reward
                 stats['actions'][-1] += 1
                 t += 1
 
@@ -161,8 +160,8 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
                     break
             if flag:
                 break
-            next_state, reward, done, _ = env.step(action)
-
+            next_state, sub_reward, done, _ = env.step(action)
+            reward += sub_reward
         # Add to replay buffer and train
         if mode == "train":
             agent.step(state, action, reward, next_state, done)

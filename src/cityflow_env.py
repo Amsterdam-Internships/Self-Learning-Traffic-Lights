@@ -27,7 +27,7 @@ class CityFlowEnv:
         self.phase_list = self.lane_phase_info[self.intersection_id]["phase"]
         self.phase_startLane_mapping = self.lane_phase_info[self.intersection_id]["phase_startLane_mapping"]
 
-        self.current_phase = self.phase_list[0]
+        self.current_phase = self.phase_list[0]  # (I think) from -1 to len(phase_list)-1
         self.current_phase_time = 0
         self.yellow_time = 5
 
@@ -70,6 +70,8 @@ class CityFlowEnv:
 
     def get_state_sotl(self):
         state = {'lane_waiting_vehicle_count': self.eng.get_lane_waiting_vehicle_count(),
+                 'lane_vehicle_count': self.eng.get_lane_vehicle_count(),
+                 'start_lane': self.start_lane,
                  'current_phase': self.current_phase,
                  'current_phase_time': self.current_phase_time}
         return state

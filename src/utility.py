@@ -106,7 +106,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
     config["roadnetLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'], config["roadnetLogFile"])
     config["replayLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'], config["replayLogFile"])
-    config['num_step'] = 300
+    config['num_step'] = 3600
     config['scenario'] = args.scenario
     config['mode'] = experiment_mode
     config['exp_name'] = args.exp_name
