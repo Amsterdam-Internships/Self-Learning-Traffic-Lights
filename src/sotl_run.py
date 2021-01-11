@@ -14,6 +14,8 @@ Self-organizing traffic lights: A realistic simulation (Cools, S et al., 2013)
 PHI = 20
 THETA = 200
 MU = 20
+# values have been raised, because the cost of switch is even higher I think, because it takes longer to return to the ligh
+# because other lights will get in between. Also, just tested a bit. It also changes because mu is a little different.
 
 args = parse_arguments()
 config = setup_config('train', 'sotl')

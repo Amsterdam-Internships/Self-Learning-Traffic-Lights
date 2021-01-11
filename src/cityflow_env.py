@@ -20,17 +20,14 @@ class CityFlowEnv:
 
         self.config = config
         self.lane_phase_info = config['lane_phase_info']
-
         self.intersection_id = list(self.lane_phase_info.keys())[0]
         self.start_lane = self.lane_phase_info[self.intersection_id]['start_lane']
         self.end_lane = self.lane_phase_info[self.intersection_id]['end_lane']
         self.phase_list = self.lane_phase_info[self.intersection_id]["phase"]
         self.phase_startLane_mapping = self.lane_phase_info[self.intersection_id]["phase_startLane_mapping"]
-
         self.current_phase = self.phase_list[0]  # (I think) from -1 to len(phase_list)-1
         self.current_phase_time = 0
         self.yellow_time = 5
-
         self.phase_log = []
 
         self.state_normalizer = Normalizer(len(config['lane_phase_info'][self.intersection_id]['start_lane']), config['norm_tau'])

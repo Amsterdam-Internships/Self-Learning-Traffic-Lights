@@ -31,9 +31,8 @@ def dqn(n_trajactories, config):
 
     Params
     ======
-        n_episodes (int): maximum number of training episodes
-        eps_start (float): starting value of epsilon, for epsilon-greedy action selection
-        eps_end (float): minimum value of epsilon
+        n_trajactories (int): maximum number of training episodes
+        config (json): configuration file to setup the CityFlow engine
     """
 
     env = CityFlowEnv(config)
@@ -53,32 +52,32 @@ def dqn(n_trajactories, config):
             'hyperparams']) + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         writer = SummaryWriter(log_dir, comment=f' batch_size={11} lr={0.1}')
 
-    # Load saved checkpoint (because of epsilon not in use)
+    # Load saved checkpoint (because of epsilon not in use).
     if LOAD == 1:
         checkpoint = torch.load("trained_models/{}/checkpoint.tar".format(args.exp_name))
         agent.qnetwork_local.load_state_dict(checkpoint['model_state_dict'])
         agent.qnetwork_target.load_state_dict(checkpoint['model_state_dict'])
         agent.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         stats = checkpoint['stats']
-        # TODO load eps, maar werkt t wel om eps zo laag te laten bij trainen? misschien kan dit loaden en verder trainen niet echt.
 
     for trajectory in range(starting_trajectory + 1, n_trajactories + 1):
-        # Perform training run through environment
+
+        # Perform training run through environment.
         train_stats = run_env(agent, eps, config, env, "train", trajectory)
 
-        # Perform evaluation run through environment
+        # Perform evaluation run through environment.
         stats = run_env(agent, 0, config, env, "eval", trajectory)
         stats['loss'] = train_stats['loss']
 
-        # Decrease epsilon
+        # Decrease epsilon.
         decay = (EPS_START - EPS_END) / ((n_trajactories - starting_trajectory) * 0.8)
         eps = max(eps - decay, EPS_END)
 
-        # Decrease learning rate
+        # Decrease learning rate.
         agent.lr_scheduler.step()
         lr = agent.lr_scheduler.get_last_lr()[0]
 
-        # Save best model
+        # Save best model.
         if stats['travel_time'] < best_travel_time:
             print('BEST\n')
             path = "trained_models/{}/{}".format(args.exp_name, config['hyperparams'])
@@ -90,6 +89,7 @@ def dqn(n_trajactories, config):
             env.log()
             best_travel_time = stats['travel_time']
 
+        # Save and show training stats.
         show_stats_every = 10
         if trajectory % show_stats_every == show_stats_every - 1:
             print('\rTrajactory {}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tEpsilon  {:.2g}\t Action count {}'
@@ -110,12 +110,12 @@ def dqn(n_trajactories, config):
                 writer.add_scalar('Average Travel Time', stats['travel_time'], trajectory)
                 writer.add_scalar('Loss', stats['loss'], trajectory)
 
-    # make sure that all pending events have been written to disk.
+    # Make sure that all pending events have been written to disk.
     if TENSORBOARD:
         writer.flush()
         writer.close()
 
-    # to make the replay logs represent the best trajectory instead of the last trajectory.
+    # Make the replay logs represent the best trajectory instead of the last trajectory.
     evaluate_one_traffic(config, args.scenario, 'train', 'print')
 
 
@@ -126,6 +126,8 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
     ======
         agent (Agent): the DQN agent to train
         eps (float): value of epsilon for epsilon-greedy action selection
+        config (json): configuration file to setup the CityFlow engine
+        env (CityFlowEnv): CityFlow environment
         mode (string): agent only takes step on 'train' mode
     """
     stats = {'loss': 0, 'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0},
@@ -143,7 +145,7 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
         # todo return mid activations of layers too and viz
         action, q_values = agent.act(state, eps)
 
-        # Take step in environment, add yellow light if action changes
+        # Take step in environment, add yellow light if action changes.
         if action == last_action:
             next_state, reward, done, _ = env.step(action)
         else:
@@ -154,7 +156,7 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
                 stats['actions'][-1] += 1
                 t += 1
 
-                # Break out of the training loop when training steps is reached
+                # Break out of the training loop when training steps is reached.
                 flag = (t >= config['num_step'])
                 if flag:
                     break
@@ -162,12 +164,12 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
                 break
             next_state, sub_reward, done, _ = env.step(action)
             reward += sub_reward
-        # Add to replay buffer and train
+        # Add to replay buffer and train.
         if mode == "train":
             agent.step(state, action, reward, next_state, done)
             stats['loss'] += agent.loss
 
-        # Save evaluation stats
+        # Save evaluation stats.
         if mode == "eval":
             stats['actions'][action] += 1
             stats['rewards'] += reward
@@ -216,5 +218,3 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
 #
 # # Evaluate last run and make ready for cleaner visualisation
 # evaluate_one_traffic(config, args.scenario, 'train', 'print')
-
-

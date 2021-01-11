@@ -21,7 +21,7 @@ BATCH_SIZE = 64  # minibatch size
 GAMMA = 0.95  # discount factor
 TAU = 1e-3  # for soft update of target parameters
 LR_decay = 0.999  # learning rate decay
-LR_STEP_TIMES = 800
+LR_STEP_TIMES = 800  # how often learning rate decays
 UPDATE_EVERY = 5  # how often to update the local network
 FREEZE_TARGET = 10000  # how often to replace the target network
 
@@ -38,14 +38,15 @@ class Agent:
         =======
             state_size (int): dimension of each state
             action_size (int): dimension of each action
-            epochs (int): amount of epochs to train
             seed (int): random seed
+            lr (float): start learning rate
+            batch_size (int): batch size
         """
 
         self.state_size = state_size
         self.action_size = action_size
 
-        # Q-Networks
+        # The Q-Networks to be trained.
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
         self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
 
@@ -54,6 +55,7 @@ class Agent:
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=LR_STEP_TIMES, gamma=0.5)
 
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, batch_size)
+
         # Initialize time steps (for updating every UPDATE_EVERY and FREEZE_TARGET steps)
         self.train_step = 0
         self.update_step = 0
@@ -64,13 +66,15 @@ class Agent:
         self.batch_size = batch_size
 
     def step(self, state, action, reward, next_step, done):
-        # Save experience in replay memory
+
+        # Save experience in replay memory.
         self.memory.add(state, action, reward, next_step, done)
 
         # Learn every UPDATE_EVERY time steps.
         self.train_step = (self.train_step + 1) % UPDATE_EVERY
         if self.train_step == 0:
-            # If enough samples are available in memory, get random subset and learn
+
+            # If enough samples are available in memory, get random subset and learn.
             if len(self.memory) > self.batch_size:
                 experience = self.memory.sample()
                 self.learn(experience, GAMMA)
@@ -109,7 +113,7 @@ class Agent:
         criterion = torch.nn.MSELoss()
         self.qnetwork_local.train()
         self.qnetwork_target.eval()
-        # Shape of output from the model is (batch_size, action_dim)
+        # Shape of output from the model is (batch_size, action_dim).
         predicted_targets = self.qnetwork_local(states).gather(1, actions)
 
         with torch.no_grad():
@@ -126,7 +130,7 @@ class Agent:
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
-        # Update target network
+        # Update target network.
         self.soft_update(TAU)
 
         # # Update target network every FREEZE_TARGET time steps.

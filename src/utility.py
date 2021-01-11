@@ -13,6 +13,9 @@ Source: https://github.com/tianrang-intelligence/TSCC2019
 
 
 def parse_arguments():
+    """ Parse the arguments given by user.
+
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--scenario", type=str, default="new_scenario")
     parser.add_argument("--num_step", type=int, default=300)
@@ -21,10 +24,16 @@ def parse_arguments():
 
 
 def parse_roadnet(roadnet_file):
+    """ Digest the roadnet datafile into chunks of usable information.
+
+    Params
+    ======
+        roadnet_file (json): Roadnet file indicating the design of the intersections to be consumed by CityFlow.
+    """
     roadnet = json.load(open(roadnet_file))
     lane_phase_info_dict = {}
 
-    # many intersections exist in the roadnet and virtual intersection is controlled by signal
+    # Many intersections exist in the roadnet and only virtual intersections are controlled by signal/agent.
     for intersection in roadnet["intersections"]:
         if intersection['virtual']:
             continue
@@ -67,35 +76,20 @@ def parse_roadnet(roadnet_file):
     return lane_phase_info_dict
 
 
-# save plots of experiment
-def save_plots(name):
-    args = parse_arguments()
-    # define the name of the directory to be created
-    path = os.path.join("experiments/", args.exp_name)
-
-    if not os.path.exists(path):
-        try:
-            os.mkdir(path)
-        except OSError:
-            print("Creation of the directory %s failed" % path)
-
-    os.chdir(path)
-    plt.savefig(name)
-    os.chdir("../")
-
-
 def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs=0, norm_rewards=0):
     """Update the configuration file
 
     Params
     ======
-        num_steps (int): maximum number of training episodes
-        mode (string):
+        data_set_mode (string): Use train or test dataset
+        experiment_mode (string): Save as train or test experiment
+        lr (float): Start learning rate
+        batch_size (int): Batch size
         norm_inputs (bool):
         norm_rewards (bool):
-        norm_tau (float):
     """
     args = parse_arguments()
+
     # update the config file with arguments
     with open('src/config.json') as json_file:
         config = json.load(json_file)
@@ -106,7 +100,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
     config["roadnetLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'], config["roadnetLogFile"])
     config["replayLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'], config["replayLogFile"])
-    config['num_step'] = 300
+    config['num_step'] = 3600
     config['scenario'] = args.scenario
     config['mode'] = experiment_mode
     config['exp_name'] = args.exp_name
@@ -116,6 +110,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs
     config['lr'] = lr
     config['batch_size'] = batch_size
 
+    # Make all paths in advance.
     path = "experiments/{}".format(config['exp_name'])
     if not os.path.exists(path):
         try:
@@ -128,7 +123,6 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs
             os.mkdir(path)
         except OSError:
             print("Creation of the directory %s failed" % path)
-
     path = "experiments/{}/{}/{}".format(config['exp_name'], config["mode"], config['hyperparams'])
     if not os.path.exists(path):
         try:
@@ -142,7 +136,6 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs
             os.mkdir(path)
         except OSError:
             print("Creation of the directory %s failed" % path)
-
     path = "trained_models/{}/{}".format(args.exp_name, config['hyperparams'])
     if not os.path.exists(path):
         try:
@@ -156,7 +149,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs
 
     return config
 
-
+# For normalizers, maybe not used so could be removed.
 def save_pickle(obj, filename):
     with open(filename, 'wb') as output:  # Overwrites any existing file.
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
@@ -188,3 +181,20 @@ class Normalizer:
     def normalize(self, x):
         eps = 1e-8
         return (x - self.mean)/(np.sqrt(self.var) + eps)
+
+
+# save plots of experiment, not used anymore because of tensorboard.
+def save_plots(name):
+    args = parse_arguments()
+    # define the name of the directory to be created
+    path = os.path.join("experiments/", args.exp_name)
+
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
+
+    os.chdir(path)
+    plt.savefig(name)
+    os.chdir("../")

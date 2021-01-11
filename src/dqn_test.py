@@ -9,7 +9,7 @@ from src.utility import *
 from src.evaluate import evaluate_one_traffic
 
 """
-This file contains the 
+This file contains the test loop for the Deep Reinforcement Learning agent.
 
 """
 

@@ -13,7 +13,6 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 class QNetwork(nn.Module):
     """ Actor (Policy) Model."""
 
-    # TODO input list of sizes instead of fixed 2 layers
     def __init__(self, state_size, action_size, seed, fc1_unit=64,
                  fc2_unit=64):
         """
