@@ -30,6 +30,9 @@ class CityFlowEnv:
         self.yellow_time = 5
         self.phase_log = []
 
+        self.WAITING = False
+        self.SPEED = False
+        self.DISTANCE = False
         self.state_normalizer = Normalizer(len(config['lane_phase_info'][self.intersection_id]['start_lane']), config['norm_tau'])
         self.reward_normalizer = Normalizer(1, config['norm_tau'])
 
@@ -52,16 +55,55 @@ class CityFlowEnv:
         return self.get_state(), self.get_reward(), 0, 'niks'
 
     def get_state(self):
+
         lane_vehicle_count = [self.eng.get_lane_vehicle_count()[lane] for lane in self.start_lane]
+
+        # # Normalise LIT state.
+        # if self.config['normalize_input'] == 1:
+        #     self.state_normalizer.observe(np.array(lane_vehicle_count))
+        #     lane_vehicle_count = self.state_normalizer.normalize(np.array(lane_vehicle_count))
+
+        # Add current phase as a one-hot-vector.
         # phases = np.zeros(2)
         phases = np.zeros(len(self.phase_list))
         phases[self.current_phase] = 1
 
-        if self.config['normalize_input'] == 1:
-            self.state_normalizer.observe(np.array(lane_vehicle_count))
-            lane_vehicle_count = self.state_normalizer.normalize(np.array(lane_vehicle_count))
-
+        # State of LIT: all vehicles per lane + current phase.
         combined_state = np.array(list(lane_vehicle_count) + list(phases))
+
+        if self.WAITING:
+            lane_waiting_vehicle_count = [self.eng.get_lane_waiting_vehicle_count()[lane] for lane in self.start_lane]
+            lane_moving_vehicle_count = np.array(list(lane_vehicle_count)) - np.array(list(lane_waiting_vehicle_count))
+
+            # Moving and waiting vehicles per lane separated + current phase.
+            combined_state = np.array(list(lane_moving_vehicle_count) +
+                                      list(lane_waiting_vehicle_count) +
+                                      list(phases))
+        if self.DISTANCE:
+            distance_per_vehicle = self.eng.get_vehicle_distance()
+            print(distance_per_vehicle)
+            # problem: distance travelled instead of distance from intersection.
+
+            combined_state = np.array(list(lane_vehicle_count) +
+                                      list(phases))
+
+        if self.SPEED:
+            speeds_per_lane = np.zeros(len(self.start_lane))
+            vehicles_per_lane = np.zeros(len(self.start_lane))
+
+            speed_per_vehicle = self.eng.get_vehicle_speed()
+            for vehicle_id, speed in speed_per_vehicle.items():
+                for i, lane in enumerate(self.start_lane):
+                    vehicle_info = self.eng.get_vehicle_info(vehicle_id)
+                    if vehicle_info['drivable'] == lane:
+                        if speed > 0.1:
+                            speeds_per_lane[i] += speed
+                            vehicles_per_lane[i] += 1
+            average_speed_per_lane = np.nan_to_num(speeds_per_lane / vehicles_per_lane)
+
+            # Add average speed of moving cars per lane.
+            combined_state = np.array(list(combined_state) +
+                                      list(average_speed_per_lane))
 
         return combined_state
 

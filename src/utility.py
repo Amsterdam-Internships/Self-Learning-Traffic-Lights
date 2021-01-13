@@ -98,9 +98,11 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs
     config["flowFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["flowFile"])
     config["roadnetFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["roadnetFile"])
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
-    config["roadnetLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'], config["roadnetLogFile"])
-    config["replayLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'], config["replayLogFile"])
-    config['num_step'] = 3600
+    config["roadnetLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'],
+                                                                config["roadnetLogFile"])
+    config["replayLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'],
+                                                               config["replayLogFile"])
+    config['num_step'] = 300
     config['scenario'] = args.scenario
     config['mode'] = experiment_mode
     config['exp_name'] = args.exp_name
@@ -149,7 +151,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs
 
     return config
 
-# For normalizers, maybe not used so could be removed.
+
 def save_pickle(obj, filename):
     with open(filename, 'wb') as output:  # Overwrites any existing file.
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
@@ -162,6 +164,41 @@ def load_pickle(filename):
             return pickle.load(f)
     except IOError:
         pass
+
+
+def travel_time_plot():
+    """
+
+    """
+    args = parse_arguments()
+
+    lr = 0.01
+    batch_size = 128
+
+    config = setup_config('train', 'train', lr, batch_size, norm_inputs=0, norm_rewards=0)
+    mode = 'train'
+    filename = "experiments/{}/{}/{}/travel_time_data.json".format(args.exp_name, mode, config['hyperparams'])
+    tt_data_rl = load_pickle(filename)
+
+    config = setup_config('train', 'sotl')
+    mode = 'sotl'
+    filename = "experiments/{}/{}/{}/travel_time_data.json".format(args.exp_name, mode, config['hyperparams'])
+    tt_data_sotl = load_pickle(filename)
+
+    config = setup_config('train', 'sotl_lit')
+    mode = 'sotl_lit'
+    filename = "experiments/{}/{}/{}/travel_time_data.json".format(args.exp_name, mode, config['hyperparams'])
+    tt_data_sotl_LIT = load_pickle(filename)
+
+    time_to_plot = 300
+
+    line1, = plt.plot(tt_data_sotl_LIT[time_to_plot])
+    line2, = plt.plot(tt_data_sotl[:time_to_plot])
+    line3, = plt.plot(tt_data_rl[:time_to_plot])
+    plt.ylabel('Average Travel Time')
+    plt.xlabel('Simulation Seconds')
+    plt.legend((line1, line2, line3), ('SOTL-LIT', 'SOTL', 'DRL'))
+    plt.savefig("experiments/{}/travel_time_plot.png".format(args.exp_name))
 
 
 class Normalizer:
@@ -180,7 +217,7 @@ class Normalizer:
 
     def normalize(self, x):
         eps = 1e-8
-        return (x - self.mean)/(np.sqrt(self.var) + eps)
+        return (x - self.mean) / (np.sqrt(self.var) + eps)
 
 
 # save plots of experiment, not used anymore because of tensorboard.
