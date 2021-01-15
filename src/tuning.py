@@ -2,11 +2,32 @@ from itertools import product
 
 import torch
 
-from src.dqn_train import dqn
+from src.dqn_train import *
 from src.utility import *
 from src.evaluate import *
 from src.sotl_run import run_sotl
 from src.sotl_LIT import run_sotl_LIT
+
+
+import cProfile, pstats, io
+
+
+def profile(fnc):
+    """A decorator that uses cProfile to profile a function"""
+
+    def inner(*arguments, **kwargs):
+        pr = cProfile.Profile()
+        pr.enable()
+        retval = fnc(*arguments, **kwargs)
+        pr.disable()
+        s = io.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+        return retval
+
+    return inner
 
 
 """
@@ -19,7 +40,7 @@ args = parse_arguments()
 
 TRAIN = 1  # Boolean to train or not
 
-TRAJECTORIES = 6000
+TRAJECTORIES = 10
 LRS = [1e-2, 1e-3, 1e-4, 1e-5]
 BATCH_SIZE = [16, 32, 64, 128]
 
@@ -31,7 +52,7 @@ param_values = [v for v in hyper_parameters.values()]
 # product = [[0.01, 64], [0.01, 128], [0.001, 32], [0.001, 64], [0.001, 128], [0.0001, 32], [0.0001, 64]]
 product = [[0.01, 128]]
 
-
+@profile
 def main():
 
     # Train the Deep Reinforcement Learning agent with the list of hyper parameters provided.
@@ -43,6 +64,7 @@ def main():
     # Compare the Deep Reinforcement Learning agent with baseline methods.
     # run_sotl()
     # run_sotl_LIT()
+    # random_run()
 
     # config = setup_config('train', 'train', 0.01, 128, norm_inputs=0, norm_rewards=0)
     # evaluate_one_traffic(config, args.scenario, 'train', 'print')

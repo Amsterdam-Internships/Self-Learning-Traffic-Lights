@@ -65,10 +65,10 @@ class Agent:
         self.acting_step = 0
         self.batch_size = batch_size
 
-    def step(self, state, action, reward, next_step, done):
+    def step(self, state, action, reward, next_step):
 
         # Save experience in replay memory.
-        self.memory.add(state, action, reward, next_step, done)
+        self.memory.add(state, action, reward, next_step)
 
         # Learn every UPDATE_EVERY time steps.
         self.train_step = (self.train_step + 1) % UPDATE_EVERY
@@ -90,7 +90,10 @@ class Agent:
 
         # Epsilon-greedy action selection
         if random.random() > eps:
+            print('ja')
+            print(state)
             state = torch.from_numpy(state).unsqueeze(0).float().to(device)
+            print(state)
             self.qnetwork_local.eval()
             with torch.no_grad():
                 action_values = self.qnetwork_local(state)
@@ -104,11 +107,11 @@ class Agent:
 
         Params
         =======
-            experiences (Tuple[torch.Variable]): tuple of (s, a, r, s', done) tuples
+            experiences (Tuple[torch.Variable]): tuple of (s, a, r, s') tuples
             gamma (float): discount factor
         """
 
-        states, actions, rewards, next_state, dones = experiences
+        states, actions, rewards, next_state = experiences
 
         criterion = torch.nn.MSELoss()
         self.qnetwork_local.train()
@@ -120,7 +123,7 @@ class Agent:
             # .detach() ->  Returns a new Tensor, detached from the current graph.
             labels_next = self.qnetwork_target(next_state).detach().max(1)[0].unsqueeze(1)
 
-        labels = rewards + (gamma * labels_next * (1 - dones))
+        labels = rewards + (gamma * labels_next)
 
         loss = criterion(predicted_targets, labels).to(device)
         self.loss = loss.item()
@@ -174,12 +177,11 @@ class ReplayBuffer:
         self.experiences = namedtuple("Experience", field_names=["state",
                                                                  "action",
                                                                  "reward",
-                                                                 "next_state",
-                                                                 "done"])
+                                                                 "next_state"])
 
-    def add(self, state, action, reward, next_state, done):
+    def add(self, state, action, reward, next_state):
         """Add a new experience to memory."""
-        experience = self.experiences(state, action, reward, next_state, done)
+        experience = self.experiences(state, action, reward, next_state)
         self.memory.append(experience)
 
     def sample(self):
@@ -191,10 +193,8 @@ class ReplayBuffer:
         rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(device)
         next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(
             device)
-        dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(
-            device)
 
-        return states, actions, rewards, next_states, dones
+        return states, actions, rewards, next_states
 
     def __len__(self):
         """Return the current size of internal memory."""

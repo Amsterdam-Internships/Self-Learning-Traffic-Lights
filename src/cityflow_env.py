@@ -52,7 +52,7 @@ class CityFlowEnv:
         self.eng.next_step()
 
         # environment gives back: next_state, reward, done, _
-        return self.get_state(), self.get_reward(), 0, 'niks'
+        return self.get_state(), self.get_reward()
 
     def get_state(self):
 
@@ -66,6 +66,7 @@ class CityFlowEnv:
         # Add current phase as a one-hot-vector.
         # phases = np.zeros(2)
         phases = np.zeros(len(self.phase_list))
+        # TODO check if when -1 then all zeros
         phases[self.current_phase] = 1
 
         # State of LIT: all vehicles per lane + current phase.

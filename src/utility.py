@@ -175,29 +175,36 @@ def travel_time_plot():
     lr = 0.01
     batch_size = 128
 
-    config = setup_config('train', 'train', lr, batch_size, norm_inputs=0, norm_rewards=0)
     mode = 'train'
+    config = setup_config('train', mode, lr, batch_size, norm_inputs=0, norm_rewards=0)
     filename = "experiments/{}/{}/{}/travel_time_data.json".format(args.exp_name, mode, config['hyperparams'])
     tt_data_rl = load_pickle(filename)
 
-    config = setup_config('train', 'sotl')
     mode = 'sotl'
+    config = setup_config('train', mode)
     filename = "experiments/{}/{}/{}/travel_time_data.json".format(args.exp_name, mode, config['hyperparams'])
     tt_data_sotl = load_pickle(filename)
 
-    config = setup_config('train', 'sotl_lit')
     mode = 'sotl_lit'
+    config = setup_config('train', mode)
     filename = "experiments/{}/{}/{}/travel_time_data.json".format(args.exp_name, mode, config['hyperparams'])
     tt_data_sotl_LIT = load_pickle(filename)
 
+    mode = 'random'
+    config = setup_config('train', mode)
+    filename = "experiments/{}/{}/{}/travel_time_data.json".format(args.exp_name, mode, config['hyperparams'])
+    tt_data_random = load_pickle(filename)
+
     time_to_plot = 300
 
-    line1, = plt.plot(tt_data_sotl_LIT[time_to_plot])
+    line0, = plt.plot(tt_data_random[:time_to_plot])
+    line1, = plt.plot(tt_data_sotl_LIT[:time_to_plot])
     line2, = plt.plot(tt_data_sotl[:time_to_plot])
     line3, = plt.plot(tt_data_rl[:time_to_plot])
+
     plt.ylabel('Average Travel Time')
     plt.xlabel('Simulation Seconds')
-    plt.legend((line1, line2, line3), ('SOTL-LIT', 'SOTL', 'DRL'))
+    plt.legend((line0, line1, line2, line3), ('Random', 'SOTL-LIT', 'SOTL', 'DRL'))
     plt.savefig("experiments/{}/travel_time_plot.png".format(args.exp_name))
 
 
