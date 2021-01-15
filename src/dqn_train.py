@@ -19,7 +19,7 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 
 LOAD = 0  # Set to 1 to load checkpoint
 RANDOM_RUN = 0  # (watch out, could overwrite replaylog of training)
-TENSORBOARD = 0
+TENSORBOARD = 1
 EPS_START = 0.9
 EPS_END = 0.1
 
@@ -81,13 +81,11 @@ def dqn(n_trajactories, config):
             stats = run_env(agent, 0, config, env, "eval", trajectory)
             print(
                 '\rTrajactory {}\tTravel Time {:.0f}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tEpsilon '
-                '{:.2g}\t Action count {}'
-                '\tQ value size {:.0f}'.format(trajectory + 1, stats['travel_time'],
-                                               stats['rewards'] / config['num_step'],
-                                               config['batch_size'], lr,
-                                               eps,
-                                               list(stats['actions'].values()),
-                                               np.mean(stats['q_values_size'])))
+                '{:.2g}\t Action count {}'.format(trajectory + 1, stats['travel_time'],
+                                                  stats['rewards'] / config['num_step'],
+                                                  config['batch_size'], lr,
+                                                  eps,
+                                                  list(stats['actions'].values())))
             # Save best model.
             if stats['travel_time'] < best_travel_time:
                 print('BEST\n')
@@ -132,14 +130,14 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
         mode (string): agent only takes step on 'train' mode
     """
     stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0},
-             'travel_time': 0, 'q_values_size': []}
+             'travel_time': 0}
 
     t = 0
     state = env.reset()
-    last_action, _ = agent.act(state, eps)
+    last_action = agent.act(state, eps)
 
     while t < config['num_step']:
-        action, q_values = agent.act(state, eps)
+        action = agent.act(state, eps)
 
         # Take step in environment, add yellow light if action changes.
         if action == last_action:
@@ -170,7 +168,6 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
         if mode == "eval":
             stats['actions'][action] += 1
             stats['rewards'] += reward
-            # stats['q_values_size'].append(np.round(np.mean([abs(q_values[0][j]) for j in range(len(q_values[0]))]), 3))
 
         state = next_state
         last_action = action

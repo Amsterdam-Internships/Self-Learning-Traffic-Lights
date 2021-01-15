@@ -70,7 +70,7 @@ class CityFlowEnv:
         phases[self.current_phase] = 1
 
         # State of LIT: all vehicles per lane + current phase.
-        combined_state = np.array(list(lane_vehicle_count) + list(phases))
+        combined_state = list(lane_vehicle_count) + list(phases)
 
         if self.WAITING:
             lane_waiting_vehicle_count = [self.eng.get_lane_waiting_vehicle_count()[lane] for lane in self.start_lane]
@@ -119,9 +119,9 @@ class CityFlowEnv:
     def get_reward(self):
         lane_waiting_vehicle_count = self.eng.get_lane_waiting_vehicle_count()
         reward = -1 * sum(list(lane_waiting_vehicle_count.values()))
-        if self.config['normalize_rewards'] == 1:
-            self.reward_normalizer.observe(np.array([reward]))
-            reward = self.reward_normalizer.normalize(np.array([reward]))[0]
+        # if self.config['normalize_rewards'] == 1:
+        #     self.reward_normalizer.observe(np.array([reward]))
+        #     reward = self.reward_normalizer.normalize(np.array([reward]))[0]
         return reward
 
     def get_average_travel_time(self):

@@ -8,28 +8,6 @@ from src.evaluate import *
 from src.sotl_run import run_sotl
 from src.sotl_LIT import run_sotl_LIT
 
-
-import cProfile, pstats, io
-
-
-def profile(fnc):
-    """A decorator that uses cProfile to profile a function"""
-
-    def inner(*arguments, **kwargs):
-        pr = cProfile.Profile()
-        pr.enable()
-        retval = fnc(*arguments, **kwargs)
-        pr.disable()
-        s = io.StringIO()
-        sortby = 'cumulative'
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print(s.getvalue())
-        return retval
-
-    return inner
-
-
 """
 This file contains the hyper-parameter loops.
 """
@@ -40,7 +18,7 @@ args = parse_arguments()
 
 TRAIN = 1  # Boolean to train or not
 
-TRAJECTORIES = 10
+TRAJECTORIES = 4000
 LRS = [1e-2, 1e-3, 1e-4, 1e-5]
 BATCH_SIZE = [16, 32, 64, 128]
 
@@ -52,7 +30,7 @@ param_values = [v for v in hyper_parameters.values()]
 # product = [[0.01, 64], [0.01, 128], [0.001, 32], [0.001, 64], [0.001, 128], [0.0001, 32], [0.0001, 64]]
 product = [[0.01, 128]]
 
-@profile
+
 def main():
 
     # Train the Deep Reinforcement Learning agent with the list of hyper parameters provided.

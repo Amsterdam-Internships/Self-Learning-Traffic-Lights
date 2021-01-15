@@ -90,17 +90,14 @@ class Agent:
 
         # Epsilon-greedy action selection
         if random.random() > eps:
-            print('ja')
-            print(state)
-            state = torch.from_numpy(state).unsqueeze(0).float().to(device)
-            print(state)
+            state = torch.FloatTensor(state).to(device)
             self.qnetwork_local.eval()
             with torch.no_grad():
                 action_values = self.qnetwork_local(state)
             self.qnetwork_local.train()
-            return np.argmax(action_values.cpu().data.numpy()), action_values.cpu().data.numpy()
+            return np.argmax(action_values.cpu().data.numpy())
         else:
-            return random.choice(np.arange(self.action_size)), None
+            return random.choice(np.arange(self.action_size))
 
     def learn(self, experiences, gamma):
         """Update value parameters using given batch of experience tuples.
@@ -188,11 +185,10 @@ class ReplayBuffer:
         """Randomly sample a batch of experiences from memory."""
         experiences = random.sample(self.memory, k=self.batch_size)
 
-        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(device)
-        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).long().to(device)
-        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(device)
-        next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(
-            device)
+        states = torch.FloatTensor([e.state for e in experiences if e is not None]).to(device)
+        actions = torch.LongTensor([[e.action] for e in experiences if e is not None]).to(device)
+        rewards = torch.FloatTensor([[e.reward] for e in experiences if e is not None]).to(device)
+        next_states = torch.FloatTensor([e.next_state for e in experiences if e is not None]).to(device)
 
         return states, actions, rewards, next_states
 
