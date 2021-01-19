@@ -64,10 +64,11 @@ class CityFlowEnv:
         #     lane_vehicle_count = self.state_normalizer.normalize(np.array(lane_vehicle_count))
 
         # Add current phase as a one-hot-vector.
+        # CHANGE when straight
         # phases = np.zeros(2)
         phases = np.zeros(len(self.phase_list))
-        # TODO check if when -1 then all zeros
-        phases[self.current_phase] = 1
+        if self.current_phase is not -1:
+            phases[self.current_phase] = 1
 
         # State of LIT: all vehicles per lane + current phase.
         combined_state = list(lane_vehicle_count) + list(phases)

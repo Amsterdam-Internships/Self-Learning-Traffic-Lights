@@ -17,9 +17,10 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-LOAD = 0  # Set to 1 to load checkpoint
-RANDOM_RUN = 0  # (watch out, could overwrite replaylog of training)
+
 TENSORBOARD = 1
+TIM = 1
+LOAD = 0  # Set to 1 to load checkpoint
 EPS_START = 0.9
 EPS_END = 0.1
 
@@ -38,6 +39,7 @@ def dqn(n_trajactories, config):
     env = CityFlowEnv(config)
     intersection_id = list(config['lane_phase_info'].keys())[0]
     phase_list = config['lane_phase_info'][intersection_id]['phase']
+    # CHANGE when straight
     # action_size = 2
     action_size = len(phase_list)
     state_size = len(env.reset())
@@ -63,7 +65,10 @@ def dqn(n_trajactories, config):
     for trajectory in range(starting_trajectory + 1, n_trajactories + 1):
 
         # Perform training run through environment.
-        run_env(agent, eps, config, env, "train", trajectory)
+        if TIM:
+            run_env_tim(agent, eps, config, env, "train", trajectory)
+        else:
+            run_env(agent, eps, config, env, "train", trajectory)
 
         # Decrease epsilon.
         decay = (EPS_START - EPS_END) / ((n_trajactories - starting_trajectory) * 0.8)
@@ -78,7 +83,10 @@ def dqn(n_trajactories, config):
         if trajectory % stats_every == stats_every - 1:
 
             # Perform evaluation run through environment.
-            stats = run_env(agent, 0, config, env, "eval", trajectory)
+            if TIM:
+                stats = run_env_tim(agent, 0, config, env, "eval", trajectory)
+            else:
+                stats = run_env(agent, 0, config, env, "eval", trajectory)
             print(
                 '\rTrajactory {}\tTravel Time {:.0f}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tEpsilon '
                 '{:.2g}\t Action count {}'.format(trajectory + 1, stats['travel_time'],
@@ -89,12 +97,12 @@ def dqn(n_trajactories, config):
             # Save best model.
             if stats['travel_time'] < best_travel_time:
                 print('BEST\n')
-                # path = "trained_models/{}/{}".format(args.exp_name, config['hyperparams'])
-                # torch.save({
-                #     'stats': stats,
-                #     'model_state_dict': agent.qnetwork_local.state_dict(),
-                #     'optimizer_state_dict': agent.optimizer.state_dict(),
-                # }, os.path.join(path, "checkpoint.tar"))
+                path = "trained_models/{}/{}".format(args.exp_name, config['hyperparams'])
+                torch.save({
+                    'stats': stats,
+                    'model_state_dict': agent.qnetwork_local.state_dict(),
+                    'optimizer_state_dict': agent.optimizer.state_dict(),
+                }, os.path.join(path, "checkpoint.tar"))
                 env.log()
                 best_travel_time = stats['travel_time']
 
@@ -144,7 +152,6 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
             next_state, reward = env.step(action)
         else:
             reward = 0
-            # TODO add counter for yellow time and only change action, but no for loop or breaks.
             for _ in range(env.yellow_time):
                 _, sub_reward = env.step(-1)  # action -1 -> yellow light
                 reward += sub_reward
@@ -172,6 +179,59 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
         state = next_state
         last_action = action
         t += 1
+
+    stats['travel_time'] = env.get_average_travel_time()
+    return stats
+
+
+def run_env_tim(agent, eps, config, env, mode=None, epoch=0):
+    """Run 1 episode through environment.
+
+    Params
+    ======
+        agent (Agent): the DQN agent to train
+        eps (float): value of epsilon for epsilon-greedy action selection
+        config (json): configuration file to setup the CityFlow engine
+        env (CityFlowEnv): CityFlow environment
+        mode (string): agent only takes step on 'train' mode
+    """
+    stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0},
+             'travel_time': 0}
+
+    yellow_time = 0
+    state = env.reset()
+    last_action = agent.act(state, eps)
+
+    for t in range(config['num_step']):
+
+        action = agent.act(state, eps)
+
+        if yellow_time == 0:
+            if action == last_action:
+                next_state, reward = env.step(action)
+            else:
+                next_state, reward = env.step(-1)
+                yellow_time = 1
+
+        elif 0 < yellow_time < env.yellow_time:
+            next_state, reward = env.step(-1)
+            yellow_time += 1
+
+        elif yellow_time == env.yellow_time:
+            next_state, reward = env.step(action)
+            yellow_time = 0
+
+        # Add to replay buffer and train.
+        if mode == "train":
+            agent.step(state, action, reward, next_state)
+
+        # Save evaluation stats.
+        if mode == "eval":
+            stats['actions'][action] += 1
+            stats['rewards'] += reward
+
+        state = next_state
+        last_action = action
 
     stats['travel_time'] = env.get_average_travel_time()
     return stats

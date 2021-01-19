@@ -130,11 +130,11 @@ def check(plan_file, num_step):
             error_info = '5 seconds of yellow time must be inserted between two different phase!'
             break
 
-        # check unchangeable phase
-        if next_phase != 0 and next_phase == last_green_phase:
-            flag = False
-            error_info = 'No yellow light is allowed between the same phase!'
-            break
+        # # check unchangeable phase
+        # if next_phase != 0 and next_phase == last_green_phase:
+        #     flag = False
+        #     error_info = 'No yellow light is allowed between the same phase!'
+        #     break
 
         # check yellow time
         if next_phase != 0 and yellow_time != 0 and yellow_time != 5:

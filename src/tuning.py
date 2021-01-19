@@ -18,7 +18,7 @@ args = parse_arguments()
 
 TRAIN = 1  # Boolean to train or not
 
-TRAJECTORIES = 4000
+TRAJECTORIES = 3000
 LRS = [1e-2, 1e-3, 1e-4, 1e-5]
 BATCH_SIZE = [16, 32, 64, 128]
 
@@ -40,7 +40,7 @@ def main():
             dqn(TRAJECTORIES, config)
 
     # Compare the Deep Reinforcement Learning agent with baseline methods.
-    # run_sotl()
+    run_sotl()
     # run_sotl_LIT()
     # random_run()
 
