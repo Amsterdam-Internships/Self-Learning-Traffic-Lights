@@ -154,6 +154,8 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
             reward = 0
             for _ in range(env.yellow_time):
                 _, sub_reward = env.step(-1)  # action -1 -> yellow light
+                # TODO add discount factor. so subreward * discount^counter, dat is in de reward. maar moet de discount factor
+                # voor de q value ook tot de macht 5?
                 reward += sub_reward
                 stats['actions'][-1] += 1
                 t += 1

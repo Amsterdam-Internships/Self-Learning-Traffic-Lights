@@ -26,7 +26,7 @@ lane_phase_info = config['lane_phase_info']
 intersection_id = list(lane_phase_info.keys())[0]
 # CHANGE when straight
 phase_list = lane_phase_info[intersection_id]["phase"]
-phase_list = phase_list[:2]  # when straight only
+# phase_list = phase_list[:2]  # when straight only
 lane_list = lane_phase_info[intersection_id]['start_lane']
 phase_startLane_mapping = lane_phase_info[intersection_id]["phase_startLane_mapping"]  # from 1 to len(phase_list)
 intersection_id = list(lane_phase_info.keys())[0]
