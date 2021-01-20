@@ -19,8 +19,8 @@ args = parse_arguments()
 TRAIN = 1  # Boolean to train or not
 
 TRAJECTORIES = 4000
-LRS = [1e-2, 1e-3, 1e-4, 1e-5]
-BATCH_SIZE = [32]
+LRS = [1e-2]
+BATCH_SIZE = [32, 64, 128]
 
 # Make a list of hyper params to tune
 hyper_parameters = dict(lrs=LRS, batch_size=BATCH_SIZE)
