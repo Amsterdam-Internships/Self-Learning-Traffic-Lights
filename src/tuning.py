@@ -16,7 +16,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Running on device: ", device)
 args = parse_arguments()
 
-TRAIN = 0  # Boolean to train or not
+TRAIN = 1  # Boolean to train or not
 
 TRAJECTORIES = 4000
 LRS = [1e-3]
