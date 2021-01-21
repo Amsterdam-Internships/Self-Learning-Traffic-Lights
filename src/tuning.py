@@ -19,7 +19,7 @@ args = parse_arguments()
 TRAIN = 1  # Boolean to train or not
 
 TRAJECTORIES = 4000
-LRS = [1e-3]
+LRS = [1e-2]
 BATCH_SIZE = [32, 128]
 
 # Make a list of hyper params to tune
