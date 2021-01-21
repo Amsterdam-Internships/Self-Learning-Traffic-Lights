@@ -94,7 +94,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs
     with open('src/config.json') as json_file:
         config = json.load(json_file)
 
-    config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "_norm_rewards=" + str(norm_rewards)
+    config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "replay"
     config["flowFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["flowFile"])
     config["roadnetFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["roadnetFile"])
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
