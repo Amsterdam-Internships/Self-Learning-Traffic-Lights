@@ -9,7 +9,7 @@ from src.sotl_run import run_sotl
 from src.sotl_LIT import run_sotl_LIT
 
 """
-This file contains the hyper-parameter loops.
+This file contains the hyper-parameter loop.
 """
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -18,18 +18,13 @@ args = parse_arguments()
 
 TRAIN = 1  # Boolean to train or not
 
-TRAJECTORIES = 4000
-LRS = [1e-4]
-BATCH_SIZE = [32, 128]
-# TODO fix hyperparams als arguments
+TRAJECTORIES = args.trajectories
+LRS = args.lrs
+BATCH_SIZE = args.batchsizes
 
 # Make a list of hyper params to tune
 hyper_parameters = dict(lrs=LRS, batch_size=BATCH_SIZE)
 param_values = [v for v in hyper_parameters.values()]
-# product = [[0.01, 32], [0.01, 64], [0.01, 128], [0.001, 16], [0.001, 32], [0.001, 64], [0.001, 128], [0.0001, 16], [0.0001, 32], [0.0001, 64]]
-# product = [[0.01, 128], [0.03, 128], [0.001, 32], [0.001, 64], [0.0001, 32], [0.0001, 64]]
-# product = [[0.01, 64], [0.01, 128], [0.001, 32], [0.001, 64], [0.001, 128], [0.0001, 32], [0.0001, 64]]
-# product = [[0.001, 128]]
 # 0.0001 32 kan ook, die is in principe de langzaamste leerder, maar leert misschien wel het langst door.
 
 def main():
