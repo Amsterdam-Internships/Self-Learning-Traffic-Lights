@@ -17,12 +17,11 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
 BUFFER_SIZE = 36000  # replay buffer size
-BATCH_SIZE = 64  # minibatch size
 GAMMA = 0.95  # discount factor
 TAU = 1e-3  # for soft update of target parameters
 LR_decay = 0.999  # learning rate decay
 LR_STEP_TIMES = 800  # how often learning rate decays
-UPDATE_EVERY = 1  # how often to update the local network
+UPDATE_EVERY = 5  # how often to update the local network
 FREEZE_TARGET = 10000  # how often to replace the target network
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -31,7 +30,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class Agent:
     """Interacts with and learns from environment."""
 
-    def __init__(self, state_size, action_size, seed, lr=1e-3, batch_size=BATCH_SIZE):
+    def __init__(self, state_size, action_size, seed, lr=1e-3, batch_size=128):
         """Initialize an Agent object.
 
         Params
