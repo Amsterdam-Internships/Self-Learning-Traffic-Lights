@@ -21,9 +21,9 @@ TRAIN = 1  # Boolean to train or not
 
 TRAJECTORIES = args.trajectories
 
-LRS = [int(item) for item in args.lrs.split(' ')]
+LRS = [int(item) for item in args.lrs.split(',')]
 
-BATCH_SIZE = args.batchsizes
+BATCH_SIZE = [int(item) for item in args.batchsizes.split(',')]
 
 # Make a list of hyper params to tune
 hyper_parameters = dict(lrs=LRS, batch_size=BATCH_SIZE)

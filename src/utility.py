@@ -21,8 +21,8 @@ def parse_arguments():
     parser.add_argument("--exp_name", type=str, default="new_experiment")
     parser.add_argument("--num_step", type=int, default=300)
     parser.add_argument("--trajectories", type=int, default=3000)
-    parser.add_argument("--lrs", type=str, default=0.01)
-    parser.add_argument("--batchsizes", type=int, nargs="+", default=128)
+    parser.add_argument("--lrs", type=str, default="0.01")
+    parser.add_argument("--batchsizes", type=str, default="128")
 
     return parser.parse_args()
 
