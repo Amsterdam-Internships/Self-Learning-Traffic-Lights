@@ -21,7 +21,7 @@ TRAIN = 1  # Boolean to train or not
 
 TRAJECTORIES = args.trajectories
 
-LRS = [int(item) for item in args.lrs.split(',')]
+LRS = [float(item) for item in args.lrs.split(',')]
 
 BATCH_SIZE = [int(item) for item in args.batchsizes.split(',')]
 
