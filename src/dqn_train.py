@@ -93,15 +93,14 @@ def dqn(n_trajactories, config):
             # Evaluate the maximum Q values on a fixed set of random states.
             average_max_qvals = eval_fixed_states(agent, 0, config)
 
-            print(
-                '\rTrajactory {}\tTravel Time {:.0f}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tRM size: {}\tLearn every: {}\tEpsilon '
-                '{:.2g}\t Max Q val {:.1f}\tAction count {}'.format(trajectory + 1, stats['travel_time'],
-                                                                    stats['rewards'] / config['num_step'],
-                                                                    config['batch_size'], lr, config["rm_size"],
-                                                                    config["learn_every"],
-                                                                    eps,
-                                                                    average_max_qvals,
-                                                                    list(stats['actions'].values())))
+            print('\rTrajactory {}\tTravel Time {:.0f}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tRM '
+                  'size: {}\tLearn every: {}\tEpsilon '
+                  '{:.2g}\tMax Q val {:.1f}'.format(trajectory + 1, stats['travel_time'],
+                                                    stats['rewards'] / config['num_step'],
+                                                    config['batch_size'], lr, config["rm_size"],
+                                                    config["learn_every"],
+                                                    eps,
+                                                    average_max_qvals))
             # Save best model.
             if stats['travel_time'] < best_travel_time:
                 print('BEST\n')
@@ -267,6 +266,7 @@ def random_run():
 
 
 def eval_fixed_states(agent, eps, config):
+
     if config['num_step'] == 300:
         random_states = [[1, 18, 1, 29, 0, 6, 2, 11, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                          [0, 17, 1, 29, 0, 6, 1, 9, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
@@ -286,9 +286,9 @@ def eval_fixed_states(agent, eps, config):
                          [1, 15, 4, 18, 0, 4, 0, 5, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
                          [1, 22, 6, 37, 0, 6, 1, 10, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]]
 
-        qvals = 0
-        for state in random_states:
-            _, qval = agent.act(state, eps)
-            qvals += qval
-        average_max_qval = qvals / len(random_states)
-        return average_max_qval
+    qvals = 0
+    for state in random_states:
+        _, qval = agent.act(state, eps)
+        qvals += qval
+    average_max_qval = qvals / len(random_states)
+    return average_max_qval
