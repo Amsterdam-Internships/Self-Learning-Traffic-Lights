@@ -1,4 +1,5 @@
 from itertools import product
+import time
 
 import torch
 import cProfile, pstats, io
@@ -22,11 +23,12 @@ TRAIN = 1  # Boolean to train or not
 TRAJECTORIES = args.trajectories
 
 LRS = [float(item) for item in args.lrs.split(',')]
-
 BATCH_SIZE = [int(item) for item in args.batchsizes.split(',')]
+REPLAY_MEMORY_SIZE = [int(item) for item in args.rm_size.split(',')]
+LEARN_EVERY = [int(item) for item in args.learn_every.split(',')]
 
 # Make a list of hyper params to tune
-hyper_parameters = dict(lrs=LRS, batch_size=BATCH_SIZE)
+hyper_parameters = dict(lrs=LRS, batch_size=BATCH_SIZE, rm_size=REPLAY_MEMORY_SIZE, learn_every=LEARN_EVERY)
 param_values = [v for v in hyper_parameters.values()]
 # 0.0001 32 kan ook, die is in principe de langzaamste leerder, maar leert misschien wel het langst door.
 # 0.001/0.0001 met 128 best. 0.0001 ook met 32 oke, misschien kleine lr beter met grotere replay?
@@ -38,9 +40,13 @@ def main():
 
     # Train the Deep Reinforcement Learning agent with the list of hyper parameters provided.
     if TRAIN:
-        for lr, batch_size in product(*param_values):
-            config = setup_config('train', 'train', lr, batch_size, norm_inputs=0, norm_rewards=0)
-            dqn(TRAJECTORIES, config)
+        for lr, batch_size, rm_size, learn_every in product(*param_values):
+            config = setup_config('train', 'train', lr, batch_size, rm_size, learn_every)
+            normalized_trajectories = TRAJECTORIES * learn_every
+
+            start = time.time()
+            dqn(normalized_trajectories, config)
+            end = time.time()
 
     # Compare the Deep Reinforcement Learning agent with baseline methods.
     run_sotl()

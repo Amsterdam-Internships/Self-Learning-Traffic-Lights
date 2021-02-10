@@ -23,6 +23,9 @@ def parse_arguments():
     parser.add_argument("--trajectories", type=int, default=3000)
     parser.add_argument("--lrs", type=str, default="0.01")
     parser.add_argument("--batchsizes", type=str, default="128")
+    parser.add_argument("--output_dir", type=str, default="./")
+    parser.add_argument("--rm_size", type=str, default="36000")
+    parser.add_argument("--learn_every", type=str, default="4")
 
     return parser.parse_args()
 
@@ -80,7 +83,7 @@ def parse_roadnet(roadnet_file):
     return lane_phase_info_dict
 
 
-def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs=0, norm_rewards=0):
+def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, learn_every=0):
     """Update the configuration file
 
     Params
@@ -98,51 +101,64 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, norm_inputs
     with open('src/config.json') as json_file:
         config = json.load(json_file)
 
-    config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "replay"
+    config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "_rm_size=" + str(rm_size) + "_learn_every=" + str(learn_every)
     config["flowFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["flowFile"])
     config["roadnetFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["roadnetFile"])
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
-    config["roadnetLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'],
+    config["roadnetLogFile"] = "{}/experiments/{}/{}/{}/{}".format(args.output_dir, args.exp_name, experiment_mode, config['hyperparams'],
                                                                 config["roadnetLogFile"])
-    config["replayLogFile"] = "experiments/{}/{}/{}/{}".format(args.exp_name, experiment_mode, config['hyperparams'],
+    config["replayLogFile"] = "{}/experiments/{}/{}/{}/{}".format(args.output_dir, args.exp_name, experiment_mode, config['hyperparams'],
                                                                config["replayLogFile"])
     config['num_step'] = args.num_step
     config['scenario'] = args.scenario
     config['mode'] = experiment_mode
     config['exp_name'] = args.exp_name
-    config['normalize_input'] = norm_inputs
-    config['normalize_rewards'] = norm_rewards
     config['norm_tau'] = 1e-3
     config['lr'] = lr
     config['batch_size'] = batch_size
+    config['rm_size'] = rm_size
+    config['learn_every'] = learn_every
 
     # Make all paths in advance.
-    path = "experiments/{}".format(config['exp_name'])
+    path = "{}/experiments".format(args.output_dir)
     if not os.path.exists(path):
         try:
             os.mkdir(path)
         except OSError:
             print("Creation of the directory %s failed" % path)
-    path = "experiments/{}/{}".format(config['exp_name'], config["mode"])
+    path = "{}/experiments/{}".format(args.output_dir, config['exp_name'])
     if not os.path.exists(path):
         try:
             os.mkdir(path)
         except OSError:
             print("Creation of the directory %s failed" % path)
-    path = "experiments/{}/{}/{}".format(config['exp_name'], config["mode"], config['hyperparams'])
+    path = "{}/experiments/{}/{}".format(args.output_dir, config['exp_name'], config["mode"])
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
+    path = "{}/experiments/{}/{}/{}".format(args.output_dir, config['exp_name'], config["mode"], config['hyperparams'])
     if not os.path.exists(path):
         try:
             os.mkdir(path)
         except OSError:
             print("Creation of the directory %s failed" % path)
 
-    path = "trained_models/{}".format(args.exp_name)
+    path = "{}/trained_models".format(args.output_dir)
     if not os.path.exists(path):
         try:
             os.mkdir(path)
         except OSError:
             print("Creation of the directory %s failed" % path)
-    path = "trained_models/{}/{}".format(args.exp_name, config['hyperparams'])
+
+    path = "{}/trained_models/{}".format(args.output_dir, args.exp_name)
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
+    path = "{}/trained_models/{}/{}".format(args.output_dir, args.exp_name, config['hyperparams'])
     if not os.path.exists(path):
         try:
             os.mkdir(path)

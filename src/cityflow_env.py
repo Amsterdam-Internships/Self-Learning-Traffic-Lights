@@ -156,25 +156,38 @@ class CityFlowEnv:
     def log(self):
         """Saves chosen actions and normalizers to files.
         """
+        args = parse_arguments()
+
         df = pd.DataFrame({self.intersection_id: self.phase_log[:self.config['num_step']]})
-        path = "experiments/{}".format(self.config['exp_name'])
+
+        path = "{}/experiments".format(args.output_dir)
         if not os.path.exists(path):
             try:
                 os.mkdir(path)
             except OSError:
                 print("Creation of the directory %s failed" % path)
-        path = "experiments/{}/{}".format(self.config['exp_name'], self.config["mode"])
+        path = "{}/experiments/{}".format(args.output_dir, self.config['exp_name'])
+        if not os.path.exists(path):
+            try:
+                os.mkdir(path)
+            except OSError:
+                print("Creation of the directory %s failed" % path)
+        path = "{}/experiments/{}/{}".format(args.output_dir, self.config['exp_name'], self.config["mode"])
+        if not os.path.exists(path):
+            try:
+                os.mkdir(path)
+            except OSError:
+                print("Creation of the directory %s failed" % path)
+        path = "{}/experiments/{}/{}/{}".format(args.output_dir, self.config['exp_name'], self.config["mode"], self.config['hyperparams'])
         if not os.path.exists(path):
             try:
                 os.mkdir(path)
             except OSError:
                 print("Creation of the directory %s failed" % path)
 
-        # maybe path should still be created
-        path = "experiments/{}/{}/{}".format(self.config['exp_name'], self.config["mode"], self.config['hyperparams'])
         df.to_csv(os.path.join(path, 'signal_plan_template.txt'), index=None)
 
-        path = "trained_models/{}/{}".format(self.config["exp_name"], self.config['hyperparams'])
+        path = "{}/trained_models/{}/{}".format(args.output_dir, self.config["exp_name"], self.config['hyperparams'])
         if not os.path.exists(path):
             try:
                 os.mkdir(path)

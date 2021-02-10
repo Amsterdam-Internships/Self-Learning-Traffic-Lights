@@ -16,12 +16,10 @@ Soft-updates are used to update the target network every training iteration.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-BUFFER_SIZE = 36000  # replay buffer size
-GAMMA = 0.95  # discount factor
+GAMMA = 0.99  # discount factor
 TAU = 1e-3  # for soft update of target parameters
 LR_decay = 0.999  # learning rate decay
 LR_STEP_TIMES = 800  # how often learning rate decays
-UPDATE_EVERY = 5  # how often to update the local network
 FREEZE_TARGET = 10000  # how often to replace the target network
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -30,7 +28,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class Agent:
     """Interacts with and learns from environment."""
 
-    def __init__(self, state_size, action_size, seed, lr=1e-3, batch_size=128):
+    def __init__(self, state_size, action_size, seed, lr=1e-3, batch_size=128, rm_size=36000, learn_every=4):
         """Initialize an Agent object.
 
         Params
@@ -51,9 +49,9 @@ class Agent:
 
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=lr)
         # self.optimizer = optim.SGD(self.qnetwork_local.parameters(), lr=LR, momentum=0.9)
-        self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=LR_STEP_TIMES, gamma=0.5)
+        # self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=LR_STEP_TIMES, gamma=0.5)
 
-        self.memory = ReplayBuffer(action_size, BUFFER_SIZE, batch_size)
+        self.memory = ReplayBuffer(action_size, rm_size, batch_size)
 
         # Initialize time steps (for updating every UPDATE_EVERY and FREEZE_TARGET steps)
         self.train_step = 0
@@ -63,6 +61,7 @@ class Agent:
         self.training_step = 0
         self.acting_step = 0
         self.batch_size = batch_size
+        self.learn_every = learn_every
 
     def step(self, state, action, reward, next_step):
 
@@ -70,7 +69,7 @@ class Agent:
         self.memory.add(state, action, reward, next_step)
 
         # Learn every UPDATE_EVERY time steps.
-        self.train_step = (self.train_step + 1) % UPDATE_EVERY
+        self.train_step = (self.train_step + 1) % self.learn_every
         if self.train_step == 0:
 
             # If enough samples are available in memory, get random subset and learn.

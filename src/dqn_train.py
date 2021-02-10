@@ -21,7 +21,7 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 TENSORBOARD = 1
 TIM = 1
 LOAD = 0  # Set to 1 to load checkpoint
-EPS_START = 0.9
+EPS_START = 1
 EPS_END = 0.1
 
 args = parse_arguments()
@@ -47,11 +47,10 @@ def dqn(n_trajactories, config):
     starting_trajectory = 0
     eps = EPS_START
 
-    agent = Agent(state_size, action_size, 0, config['lr'], config['batch_size'])
+    agent = Agent(state_size, action_size, 0, config['lr'], config['batch_size'], config["rm_size"], config["learn_every"])
 
     if TENSORBOARD:
-        log_dir = 'experiments/{}/tensorboard/{}'.format(args.exp_name, config[
-            'hyperparams']) + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        log_dir = '{}/experiments/{}/tensorboard/{}'.format(args.output_dir, args.exp_name, config['hyperparams']) + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         writer = SummaryWriter(log_dir, comment=f' batch_size={11} lr={0.1}')
 
     # Load saved checkpoint (because of epsilon not in use).
@@ -71,12 +70,13 @@ def dqn(n_trajactories, config):
             run_env(agent, eps, config, env, "train", trajectory)
 
         # Decrease epsilon.
-        decay = (EPS_START - EPS_END) / ((n_trajactories - starting_trajectory) * 0.8)
+        decay = (EPS_START - EPS_END) / ((n_trajactories - starting_trajectory) * 0.1)
         eps = max(eps - decay, EPS_END)
 
         # Decrease learning rate.
-        agent.lr_scheduler.step()
-        lr = agent.lr_scheduler.get_last_lr()[0]
+        # agent.lr_scheduler.step()
+        # lr = agent.lr_scheduler.get_last_lr()[0]
+        lr = config['lr']
 
         # Save and show training stats.
         stats_every = 10
@@ -88,16 +88,16 @@ def dqn(n_trajactories, config):
             else:
                 stats = run_env(agent, 0, config, env, "eval", trajectory)
             print(
-                '\rTrajactory {}\tTravel Time {:.0f}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tEpsilon '
+                '\rTrajactory {}\tTravel Time {:.0f}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tRM size: {}\tLearn every: {}\tEpsilon '
                 '{:.2g}\t Action count {}'.format(trajectory + 1, stats['travel_time'],
                                                   stats['rewards'] / config['num_step'],
-                                                  config['batch_size'], lr,
+                                                  config['batch_size'], lr, config["rm_size"], config["learn_every"],
                                                   eps,
                                                   list(stats['actions'].values())))
             # Save best model.
             if stats['travel_time'] < best_travel_time:
                 print('BEST\n')
-                path = "trained_models/{}/{}".format(args.exp_name, config['hyperparams'])
+                path = "{}/trained_models/{}/{}".format(args.output_dir, args.exp_name, config['hyperparams'])
                 torch.save({
                     'stats': stats,
                     'model_state_dict': agent.qnetwork_local.state_dict(),
