@@ -16,7 +16,7 @@ Soft-updates are used to update the target network every training iteration.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-GAMMA = 0.99  # discount factor
+GAMMA = 0.95  # discount factor
 TAU = 1e-3  # for soft update of target parameters
 LR_decay = 0.999  # learning rate decay
 LR_STEP_TIMES = 800  # how often learning rate decays
@@ -93,9 +93,9 @@ class Agent:
             with torch.no_grad():
                 action_values = self.qnetwork_local(state)
             self.qnetwork_local.train()
-            return np.argmax(action_values.cpu().data.numpy())
+            return np.argmax(action_values.cpu().data.numpy()), np.amax(action_values.cpu().data.numpy())
         else:
-            return random.choice(np.arange(self.action_size))
+            return random.choice(np.arange(self.action_size)), None
 
     def learn(self, experiences, gamma):
         """Update value parameters using given batch of experience tuples.

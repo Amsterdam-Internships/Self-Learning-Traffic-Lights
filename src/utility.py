@@ -26,6 +26,7 @@ def parse_arguments():
     parser.add_argument("--output_dir", type=str, default="./")
     parser.add_argument("--rm_size", type=str, default="36000")
     parser.add_argument("--learn_every", type=str, default="4")
+    parser.add_argument("--smdp", type=bool, default=True)
 
     return parser.parse_args()
 
@@ -83,7 +84,7 @@ def parse_roadnet(roadnet_file):
     return lane_phase_info_dict
 
 
-def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, learn_every=0):
+def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=True):
     """Update the configuration file
 
     Params
@@ -101,7 +102,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
     with open('src/config.json') as json_file:
         config = json.load(json_file)
 
-    config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "_rm_size=" + str(rm_size) + "_learn_every=" + str(learn_every)
+    config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "_rm_size=" + str(rm_size) + "_learn_every=" + str(learn_every) + "_smdp=" + str(smdp)
     config["flowFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["flowFile"])
     config["roadnetFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["roadnetFile"])
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
@@ -118,6 +119,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
     config['batch_size'] = batch_size
     config['rm_size'] = rm_size
     config['learn_every'] = learn_every
+    config['smdp'] = smdp
 
     # Make all paths in advance.
     path = "{}/experiments".format(args.output_dir)

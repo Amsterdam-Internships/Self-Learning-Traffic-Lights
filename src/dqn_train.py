@@ -17,12 +17,12 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-
 TENSORBOARD = 1
-TIM = 1
 LOAD = 0  # Set to 1 to load checkpoint
 EPS_START = 1
 EPS_END = 0.1
+EPS_END_PERCENTAGE = 0.1
+GAMMA = 0.95  # discount factor (Should be same as in agent file)
 
 args = parse_arguments()
 
@@ -47,10 +47,12 @@ def dqn(n_trajactories, config):
     starting_trajectory = 0
     eps = EPS_START
 
-    agent = Agent(state_size, action_size, 0, config['lr'], config['batch_size'], config["rm_size"], config["learn_every"])
+    agent = Agent(state_size, action_size, 0, config['lr'], config['batch_size'], config["rm_size"],
+                  config["learn_every"])
 
     if TENSORBOARD:
-        log_dir = '{}/experiments/{}/tensorboard/{}'.format(args.output_dir, args.exp_name, config['hyperparams']) + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        log_dir = '{}/experiments/{}/tensorboard/{}'.format(args.output_dir, args.exp_name, config[
+            'hyperparams']) + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         writer = SummaryWriter(log_dir, comment=f' batch_size={11} lr={0.1}')
 
     # Load saved checkpoint (because of epsilon not in use).
@@ -64,13 +66,13 @@ def dqn(n_trajactories, config):
     for trajectory in range(starting_trajectory + 1, n_trajactories + 1):
 
         # Perform training run through environment.
-        if TIM:
-            run_env_tim(agent, eps, config, env, "train", trajectory)
+        if config['smdp']:
+            run_env_smdp(agent, eps, config, env, "train", trajectory)
         else:
-            run_env(agent, eps, config, env, "train", trajectory)
+            run_env_mdp(agent, eps, config, env, "train", trajectory)
 
         # Decrease epsilon.
-        decay = (EPS_START - EPS_END) / ((n_trajactories - starting_trajectory) * 0.1)
+        decay = (EPS_START - EPS_END) / ((n_trajactories - starting_trajectory) * EPS_END_PERCENTAGE)
         eps = max(eps - decay, EPS_END)
 
         # Decrease learning rate.
@@ -83,17 +85,23 @@ def dqn(n_trajactories, config):
         if trajectory % stats_every == stats_every - 1:
 
             # Perform evaluation run through environment.
-            if TIM:
-                stats = run_env_tim(agent, 0, config, env, "eval", trajectory)
+            if config['smdp']:
+                stats = run_env_smdp(agent, 0, config, env, "eval")
             else:
-                stats = run_env(agent, 0, config, env, "eval", trajectory)
+                stats = run_env_mdp(agent, 0, config, env, "eval")
+
+            # Evaluate the maximum Q values on a fixed set of random states.
+            average_max_qvals = eval_fixed_states(agent, 0, config)
+
             print(
                 '\rTrajactory {}\tTravel Time {:.0f}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tRM size: {}\tLearn every: {}\tEpsilon '
-                '{:.2g}\t Action count {}'.format(trajectory + 1, stats['travel_time'],
-                                                  stats['rewards'] / config['num_step'],
-                                                  config['batch_size'], lr, config["rm_size"], config["learn_every"],
-                                                  eps,
-                                                  list(stats['actions'].values())))
+                '{:.2g}\t Max Q val {:.1f}\tAction count {}'.format(trajectory + 1, stats['travel_time'],
+                                                                    stats['rewards'] / config['num_step'],
+                                                                    config['batch_size'], lr, config["rm_size"],
+                                                                    config["learn_every"],
+                                                                    eps,
+                                                                    average_max_qvals,
+                                                                    list(stats['actions'].values())))
             # Save best model.
             if stats['travel_time'] < best_travel_time:
                 print('BEST\n')
@@ -116,6 +124,7 @@ def dqn(n_trajactories, config):
 
                 writer.add_scalar('Average Reward', stats['rewards'] / config['num_step'], trajectory)
                 writer.add_scalar('Average Travel Time', stats['travel_time'], trajectory)
+                writer.add_scalar('Average Max Q Value', average_max_qvals, trajectory)
 
     # Make sure that all pending events have been written to disk.
     if TENSORBOARD:
@@ -126,7 +135,7 @@ def dqn(n_trajactories, config):
     evaluate_one_traffic(config, args.scenario, 'train', 'print')
 
 
-def run_env(agent, eps, config, env, mode=None, epoch=0):
+def run_env_smdp(agent, eps, config, env, mode=None, trajectory=0, writer=None):
     """Run 1 episode through environment.
 
     Params
@@ -142,23 +151,23 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
 
     t = 0
     state = env.reset()
-    last_action = agent.act(state, eps)
+    last_action, _ = agent.act(state, eps)
 
     while t < config['num_step']:
-        action = agent.act(state, eps)
+        action, _ = agent.act(state, eps)
 
         # Take step in environment, add yellow light if action changes.
         if action == last_action:
             next_state, reward = env.step(action)
         else:
             reward = 0
+            counter = 0
             for _ in range(env.yellow_time):
                 _, sub_reward = env.step(-1)  # action -1 -> yellow light
-                # TODO add discount factor. so subreward * discount^counter, dat is in de reward. maar moet de discount factor
-                # voor de q value ook tot de macht 5?
-                reward += sub_reward
+                reward += sub_reward * GAMMA ** counter
                 stats['actions'][-1] += 1
                 t += 1
+                counter += 1
 
                 # Break out of the training loop when training steps is reached.
                 flag = (t >= config['num_step'])
@@ -167,7 +176,7 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
             if flag:
                 break
             next_state, sub_reward = env.step(action)
-            reward += sub_reward
+            reward += sub_reward * GAMMA ** counter
 
         # Add to replay buffer and train.
         if mode == "train":
@@ -186,7 +195,7 @@ def run_env(agent, eps, config, env, mode=None, epoch=0):
     return stats
 
 
-def run_env_tim(agent, eps, config, env, mode=None, epoch=0):
+def run_env_mdp(agent, eps, config, env, mode=None, epoch=0):
     """Run 1 episode through environment.
 
     Params
@@ -202,11 +211,11 @@ def run_env_tim(agent, eps, config, env, mode=None, epoch=0):
 
     yellow_time = 0
     state = env.reset()
-    last_action = agent.act(state, eps)
+    last_action, _ = agent.act(state, eps)
 
     for t in range(config['num_step']):
 
-        action = agent.act(state, eps)
+        action, _ = agent.act(state, eps)
 
         if yellow_time == 0:
             if action == last_action:
@@ -252,6 +261,34 @@ def random_run():
     state_size = len(env.reset())
     random_agent = Agent(state_size, action_size, seed=0)
 
-    run_env(random_agent, 1, config, env, 'random')
+    run_env_smdp(random_agent, 1, config, env, 'random')
     env.log()
     evaluate_one_traffic(config, args.scenario, 'random', 'print')
+
+
+def eval_fixed_states(agent, eps, config):
+    if config['num_step'] == 300:
+        random_states = [[1, 18, 1, 29, 0, 6, 2, 11, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                         [0, 17, 1, 29, 0, 6, 1, 9, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+                         [0, 11, 1, 13, 0, 1, 1, 6, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+                         [1, 9, 2, 24, 0, 9, 0, 5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                         [0, 9, 0, 17, 0, 2, 1, 5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+
+    if config['num_step'] == 3600:
+        random_states = [[2, 37, 1, 34, 2, 34, 0, 37, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+                         [0, 36, 0, 34, 2, 36, 0, 38, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+                         [0, 29, 3, 34, 2, 18, 0, 21, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+                         [0, 5, 2, 13, 0, 1, 0, 7, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                         [1, 12, 1, 27, 0, 6, 1, 11, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                         [1, 7, 3, 10, 0, 0, 0, 5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                         [0, 7, 3, 11, 0, 0, 0, 7, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                         [1, 15, 2, 16, 0, 2, 1, 6, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                         [1, 15, 4, 18, 0, 4, 0, 5, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                         [1, 22, 6, 37, 0, 6, 1, 10, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]]
+
+        qvals = 0
+        for state in random_states:
+            _, qval = agent.act(state, eps)
+            qvals += qval
+        average_max_qval = qvals / len(random_states)
+        return average_max_qval

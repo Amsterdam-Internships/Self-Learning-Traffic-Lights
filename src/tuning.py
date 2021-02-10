@@ -41,12 +41,13 @@ def main():
     # Train the Deep Reinforcement Learning agent with the list of hyper parameters provided.
     if TRAIN:
         for lr, batch_size, rm_size, learn_every in product(*param_values):
-            config = setup_config('train', 'train', lr, batch_size, rm_size, learn_every)
+            config = setup_config('train', 'train', lr, batch_size, rm_size, learn_every, args.smdp)
             normalized_trajectories = TRAJECTORIES * learn_every
 
             start = time.time()
             dqn(normalized_trajectories, config)
             end = time.time()
+            print("This training loop took this amount of seconds: ", end-start)
 
     # Compare the Deep Reinforcement Learning agent with baseline methods.
     run_sotl()
