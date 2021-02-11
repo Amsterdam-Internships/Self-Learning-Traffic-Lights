@@ -23,30 +23,30 @@ def main():
 
 def evaluate_one_traffic(config, scenario, mode='train', printing='no_printing'):
     args = parse_arguments()
-    plan_file = "{}/experiments/{}/{}/{}/signal_plan_template.txt".format(args.output_dir, args.exp_name, mode, config['hyperparams'])
-    out_file = "{}/experiments/{}/{}/{}/evaluation.txt".format(args.output_dir, args.exp_name, mode, config['hyperparams'])
-    out_file2 = "{}/experiments/{}/{}/{}/travel_time_data.json".format(args.output_dir, args.exp_name, mode, config['hyperparams'])
+    plan_file = "{}/experiments/{}/{}/{}/signal_plan_template.txt".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
+    out_file = "{}/experiments/{}/{}/{}/evaluation.txt".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
+    out_file2 = "{}/experiments/{}/{}/{}/travel_time_data.json".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
 
     if check(plan_file, config["num_step"]):
         tt, actions, tt_list = cal_travel_time(config, plan_file)
         if printing == 'print':
+            print("")
             print("====================== travel time ======================")
-            print("scenario_{0}: {1:.2f} s".format(scenario, tt))
-            print("====================== travel time ======================\n")
+            print(config['mode'] + ": scenario_{0}: {1:.2f} s".format(config['scenario'], tt))
 
             # change to baseline of fixed or sotl later. if score is > 0 you approved by that margin,
             # if score is <0 you got worse.
             # b = 58.88  # SOTL tt for 6.0.real_1x1_straight
             # b = 77.89  # SOTL average travel time for 1x1
-            b = 89.66  # SOTL tt 7.0.real_1x1_turns
-            score = (b - tt)/b
-
-            print("====================== score ======================")
-            print("scenario_{0}: {1}".format(scenario, score))
-            print("====================== score ======================")
+            # b = 89.66  # SOTL tt 7.0.real_1x1_turns
+            # score = (b - tt)/b
+            #
+            # print("====================== score ======================")
+            # print("scenario_{0}: {1}".format(scenario, score))
+            # print("====================== score ======================")
 
             with open(out_file, "w") as f:
-                f.write(str(list(actions.values())) + '\n' )
+                f.write(str(list(actions.values())) + '\n')
                 f.write(str(tt))
 
             save_pickle(tt_list, out_file2)
@@ -58,10 +58,19 @@ def cal_travel_time(dic_sim_setting, plan_file):
     dic_sim_setting['saveReplay'] = True
 
     # Write to file so the engine can open it.
-    with open('src/config_args2.json', 'w') as outfile:
-        json.dump(dic_sim_setting, outfile)
+    # with open('src/config_args2.json', 'w') as outfile:
+    #     json.dump(dic_sim_setting, outfile)
 
-    eng = cityflow.Engine("src/config_args2.json", thread_num=1)
+    if dic_sim_setting['data_set_mode'] == 'train':
+        with open('src/config_args2.json', 'w') as outfile:
+            json.dump(dic_sim_setting, outfile)
+        eng = cityflow.Engine("src/config_args2.json", thread_num=1)
+    if dic_sim_setting['data_set_mode'] == 'test':
+        with open('src/config_args2_test.json', 'w') as outfile:
+            json.dump(dic_sim_setting, outfile)
+        eng = cityflow.Engine("src/config_args2_test.json", thread_num=1)
+
+    # eng = cityflow.Engine("src/config_args2.json", thread_num=1)
 
     plan = pd.read_csv(plan_file, sep="\t", header=0, dtype=int)
     intersection_id = plan.columns[0]

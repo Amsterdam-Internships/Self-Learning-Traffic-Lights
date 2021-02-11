@@ -17,7 +17,7 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-TENSORBOARD = 1
+TENSORBOARD = 0
 LOAD = 0  # Set to 1 to load checkpoint
 EPS_START = 1
 EPS_END = 0.1
@@ -27,7 +27,7 @@ GAMMA = 0.95  # discount factor (Should be same as in agent file)
 args = parse_arguments()
 
 
-def dqn(n_trajactories, config):
+def dqn(n_trajactories, config, config_test):
     """ Deep Q-Learning
 
     Params
@@ -37,6 +37,7 @@ def dqn(n_trajactories, config):
     """
 
     env = CityFlowEnv(config)
+    env_test = CityFlowEnv(config_test)
     intersection_id = list(config['lane_phase_info'].keys())[0]
     phase_list = config['lane_phase_info'][intersection_id]['phase']
     # CHANGE when straight
@@ -44,6 +45,7 @@ def dqn(n_trajactories, config):
     action_size = len(phase_list)
     state_size = len(env.reset())
     best_travel_time = 100000
+    best_travel_time_test = 100000
     starting_trajectory = 0
     eps = EPS_START
 
@@ -61,7 +63,7 @@ def dqn(n_trajactories, config):
         agent.qnetwork_local.load_state_dict(checkpoint['model_state_dict'])
         agent.qnetwork_target.load_state_dict(checkpoint['model_state_dict'])
         agent.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        stats = checkpoint['stats']
+        stats_train = checkpoint['stats']
 
     for trajectory in range(starting_trajectory + 1, n_trajactories + 1):
 
@@ -86,32 +88,42 @@ def dqn(n_trajactories, config):
 
             # Perform evaluation run through environment.
             if config['smdp']:
-                stats = run_env_smdp(agent, 0, config, env, "eval")
+                stats_train = run_env_smdp(agent, 0, config, env, "eval")
+                stats_test = run_env_smdp(agent, 0, config_test, env_test, "eval")
             else:
-                stats = run_env_mdp(agent, 0, config, env, "eval")
+                stats_train = run_env_mdp(agent, 0, config, env, "eval")
+                stats_test = run_env_mdp(agent, 0, config_test, env_test, "eval")
 
             # Evaluate the maximum Q values on a fixed set of random states.
             average_max_qvals = eval_fixed_states(agent, 0, config)
 
-            print('\rTrajactory {}\tTravel Time {:.0f}\tMean Reward{:.2f}\tBatch_size {}\tLearning rate: {:.2g}\tRM '
-                  'size: {}\tLearn every: {}\tEpsilon '
-                  '{:.2g}\tMax Q val {:.1f}'.format(trajectory + 1, stats['travel_time'],
-                                                    stats['rewards'] / config['num_step'],
+            print('\rTrajactory {}:\tTravel Time Train: {:.0f}\tTravel Time Test: {:.0f}\tMean Reward: {:.2f}\tBatch_size: {}\tLearning rate: {:.2g}\tRM '
+                  'size: {}\tLearn every: {}\tEpsilon: '
+                  '{:.2g}\tMax Q val: {:.1f}\tActions: {}\tActions test: {}'.format(trajectory + 1, stats_train['travel_time'], stats_test['travel_time'],
+                                                    stats_train['rewards'] / config['num_step'],
                                                     config['batch_size'], lr, config["rm_size"],
                                                     config["learn_every"],
                                                     eps,
-                                                    average_max_qvals))
-            # Save best model.
-            if stats['travel_time'] < best_travel_time:
-                print('BEST\n')
+                                                    average_max_qvals,
+                                                                  stats_train['actions'].values(),
+                                                                                    stats_test['actions'].values()))
+            # Save best model on training set.
+            if stats_train['travel_time'] < best_travel_time:
+                print('BEST TRAIN\n')
+                env.log()
+                best_travel_time = stats_train['travel_time']
+
+            # Save best model on test set.
+            if stats_test['travel_time'] < best_travel_time_test:
+                print('BEST TEST\n')
                 path = "{}/trained_models/{}/{}".format(args.output_dir, args.exp_name, config['hyperparams'])
                 torch.save({
-                    'stats': stats,
+                    'stats': stats_train,
                     'model_state_dict': agent.qnetwork_local.state_dict(),
                     'optimizer_state_dict': agent.optimizer.state_dict(),
                 }, os.path.join(path, "checkpoint.tar"))
-                env.log()
-                best_travel_time = stats['travel_time']
+                env_test.log()
+                best_travel_time_test = stats_test['travel_time']
 
             if TENSORBOARD:
                 writer.add_scalar('Eps', eps, trajectory)
@@ -121,8 +133,9 @@ def dqn(n_trajactories, config):
                 for name, weight in agent.qnetwork_target.named_parameters():
                     writer.add_histogram(name + '_qnetwork_target', weight, trajectory)
 
-                writer.add_scalar('Average Reward', stats['rewards'] / config['num_step'], trajectory)
-                writer.add_scalar('Average Travel Time', stats['travel_time'], trajectory)
+                writer.add_scalar('Average Reward', stats_train['rewards'] / config['num_step'], trajectory)
+                writer.add_scalar('Average Travel Time Train', stats_train['travel_time'], trajectory)
+                writer.add_scalar('Average Travel Time Test', stats_test['travel_time'], trajectory)
                 writer.add_scalar('Average Max Q Value', average_max_qvals, trajectory)
 
     # Make sure that all pending events have been written to disk.
@@ -130,8 +143,9 @@ def dqn(n_trajactories, config):
         writer.flush()
         writer.close()
 
-    # Make the replay logs represent the best trajectory instead of the last trajectory.
+    # Create the replay logs.
     evaluate_one_traffic(config, args.scenario, 'train', 'print')
+    evaluate_one_traffic(config_test, args.scenario_test, 'test', 'print')
 
 
 def run_env_smdp(agent, eps, config, env, mode=None, trajectory=0, writer=None):

@@ -27,6 +27,7 @@ def parse_arguments():
     parser.add_argument("--rm_size", type=str, default="36000")
     parser.add_argument("--learn_every", type=str, default="4")
     parser.add_argument("--smdp", type=bool, default=True)
+    parser.add_argument("--scenario_test", type=str, default="new_scenario")
 
     return parser.parse_args()
 
@@ -103,15 +104,20 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
         config = json.load(json_file)
 
     config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "_rm_size=" + str(rm_size) + "_learn_every=" + str(learn_every) + "_smdp=" + str(smdp)
-    config["flowFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["flowFile"])
-    config["roadnetFile"] = "data/{}/{}/{}".format(args.scenario, data_set_mode, config["roadnetFile"])
+    if data_set_mode == 'train':
+        scenario = args.scenario
+    if data_set_mode == 'test':
+        scenario = args.scenario_test
+    config["flowFile"] = "data/{}/{}".format(scenario, config["flowFile"])
+    config["roadnetFile"] = "data/{}/{}".format(scenario, config["roadnetFile"])
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
     config["roadnetLogFile"] = "{}/experiments/{}/{}/{}/{}".format(args.output_dir, args.exp_name, experiment_mode, config['hyperparams'],
                                                                 config["roadnetLogFile"])
     config["replayLogFile"] = "{}/experiments/{}/{}/{}/{}".format(args.output_dir, args.exp_name, experiment_mode, config['hyperparams'],
                                                                config["replayLogFile"])
     config['num_step'] = args.num_step
-    config['scenario'] = args.scenario
+    config['data_set_mode'] = data_set_mode
+    config['scenario'] = scenario
     config['mode'] = experiment_mode
     config['exp_name'] = args.exp_name
     config['norm_tau'] = 1e-3
@@ -168,8 +174,13 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
             print("Creation of the directory %s failed" % path)
 
     # write to file so the engine can open it.
-    with open('src/config_args.json', 'w') as outfile:
-        json.dump(config, outfile)
+
+    if config['data_set_mode'] == 'train':
+        with open('src/config_args.json', 'w') as outfile:
+            json.dump(config, outfile)
+    if config['data_set_mode'] == 'test':
+        with open('src/config_args_test.json', 'w') as outfile:
+            json.dump(config, outfile)
 
     return config
 

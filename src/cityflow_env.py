@@ -16,7 +16,10 @@ class CityFlowEnv:
     """
     def __init__(self, config):
 
-        self.eng = cityflow.Engine("src/config_args.json", thread_num=1)
+        if config['data_set_mode'] == 'train':
+            self.eng = cityflow.Engine("src/config_args.json", thread_num=1)
+        if config['data_set_mode'] == 'test':
+            self.eng = cityflow.Engine("src/config_args_test.json", thread_num=1)
 
         self.config = config
         self.lane_phase_info = config['lane_phase_info']

@@ -42,15 +42,19 @@ def main():
     if TRAIN:
         for lr, batch_size, rm_size, learn_every in product(*param_values):
             config = setup_config('train', 'train', lr, batch_size, rm_size, learn_every, args.smdp)
+            config_test = setup_config('test', 'test', lr, batch_size, rm_size, learn_every, args.smdp)
             normalized_trajectories = TRAJECTORIES * learn_every
 
             start = time.time()
-            dqn(normalized_trajectories, config)
+            dqn(normalized_trajectories, config, config_test)
             end = time.time()
-            print("This training loop took this amount of seconds: ", end-start)
+            print("\nThis training loop took this amount of seconds: ", end-start)
 
     # Compare the Deep Reinforcement Learning agent with baseline methods.
-    run_sotl()
+    config_train = setup_config('train', 'sotl_train')
+    run_sotl(config_train)
+    config_test = setup_config('test', 'sotl_test')
+    run_sotl(config_test)
     # run_sotl_LIT()
     # random_run()
 

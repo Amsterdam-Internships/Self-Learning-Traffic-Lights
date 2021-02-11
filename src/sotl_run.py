@@ -18,30 +18,28 @@ MU = 20
 # because other lights will get in between. Also, just tested a bit. It also changes because mu is a little different.
 
 args = parse_arguments()
-config = setup_config('train', 'sotl')
-
-env = CityFlowEnv(config)
-
-lane_phase_info = config['lane_phase_info']
-intersection_id = list(lane_phase_info.keys())[0]
-# CHANGE when straight
-phase_list = lane_phase_info[intersection_id]["phase"]
-# phase_list = phase_list[:2]  # when straight only
-lane_list = lane_phase_info[intersection_id]['start_lane']
-phase_startLane_mapping = lane_phase_info[intersection_id]["phase_startLane_mapping"]  # from 1 to len(phase_list)
-intersection_id = list(lane_phase_info.keys())[0]
-start_lane = lane_phase_info[intersection_id]['start_lane']
 
 
-def run_sotl():
+def run_sotl(config):
     """ SOTL
     """
+    env = CityFlowEnv(config)
+
+    lane_phase_info = config['lane_phase_info']
+    intersection_id = list(lane_phase_info.keys())[0]
+    # CHANGE when straight
+    phase_list = lane_phase_info[intersection_id]["phase"]
+    # phase_list = phase_list[:2]  # when straight only
+    lane_list = lane_phase_info[intersection_id]['start_lane']
+    phase_startLane_mapping = lane_phase_info[intersection_id]["phase_startLane_mapping"]  # from 1 to len(phase_list)
+    intersection_id = list(lane_phase_info.keys())[0]
+    start_lane = lane_phase_info[intersection_id]['start_lane']
 
     t = 0
     env.reset()
     kappa = np.zeros(len(lane_list))
     state = env.get_state_sotl()
-    action = choose_action(state, kappa)
+    action = choose_action(state, kappa, phase_list, phase_startLane_mapping)
     last_action = action
 
     while t < config['num_step']:
@@ -64,7 +62,7 @@ def run_sotl():
                 if lane == lane2:
                     kappa[i] = 0
 
-        action = choose_action(state, kappa)
+        action = choose_action(state, kappa, phase_list, phase_startLane_mapping)
 
         if action == last_action:
             env.step(action)
@@ -96,7 +94,7 @@ def run_sotl():
     evaluate_one_traffic(config, args.scenario, 'sotl', 'print')
 
 
-def choose_action(state, kappa):
+def choose_action(state, kappa, phase_list, phase_startLane_mapping):
     """
     Choose action based on maximum rho, if condition is met.
 
