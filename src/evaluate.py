@@ -16,9 +16,9 @@ with open('src/config.json') as json_file:
 
 def main():
     args = parse_arguments()
-    sim_setting = config2
-    sim_setting["num_step"] = 300
-    evaluate_one_traffic(sim_setting, args.scenario)
+    # sim_setting = config2
+    # sim_setting["num_step"] = 300
+    # evaluate_one_traffic(sim_setting, args.scenario)
 
 
 def evaluate_one_traffic(config, scenario, mode='train', printing='no_printing'):
@@ -69,6 +69,10 @@ def cal_travel_time(dic_sim_setting, plan_file):
         with open('src/config_args2_test.json', 'w') as outfile:
             json.dump(dic_sim_setting, outfile)
         eng = cityflow.Engine("src/config_args2_test.json", thread_num=1)
+    if dic_sim_setting['data_set_mode'] == 'val':
+        with open('src/config_args2_val.json', 'w') as outfile:
+            json.dump(dic_sim_setting, outfile)
+        eng = cityflow.Engine("src/config_args2_val.json", thread_num=1)
 
     # eng = cityflow.Engine("src/config_args2.json", thread_num=1)
 

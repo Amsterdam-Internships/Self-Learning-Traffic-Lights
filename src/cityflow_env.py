@@ -20,6 +20,8 @@ class CityFlowEnv:
             self.eng = cityflow.Engine("src/config_args.json", thread_num=1)
         if config['data_set_mode'] == 'test':
             self.eng = cityflow.Engine("src/config_args_test.json", thread_num=1)
+        if config['data_set_mode'] == 'val':
+            self.eng = cityflow.Engine("src/config_args_val.json", thread_num=1)
 
         self.config = config
         self.lane_phase_info = config['lane_phase_info']
@@ -34,8 +36,8 @@ class CityFlowEnv:
         self.yellow_time = 5
         self.phase_log = []
 
-        self.WAITING = False
-        self.SPEED = False
+        self.WAITING = config['waiting_added']
+        self.SPEED = 0
         self.DISTANCE = False
         self.state_normalizer = Normalizer(len(config['lane_phase_info'][self.intersection_id]['start_lane']), config['norm_tau'])
         self.reward_normalizer = Normalizer(1, config['norm_tau'])
