@@ -96,8 +96,8 @@ def dqn(n_trajactories, config, config_val, config_test):
                 stats_val = run_env_mdp(agent, 0, config_val, env_val, "eval")
 
             # Evaluate the maximum Q values on a fixed set of random states.
-            average_max_qvals = eval_fixed_states(agent, 0, config)
-            # average_max_qvals = 0
+            # average_max_qvals = eval_fixed_states(agent, 0, config)
+            average_max_qvals = 0
 
             print(
                 '\rTrajactory {}:\tTravel Time Train: {:.0f}\tTravel Time Val: {:.0f}\tMean Reward: {:.2f}\tBatch_size: {}\tLearning rate: {:.2g}\tRM '
