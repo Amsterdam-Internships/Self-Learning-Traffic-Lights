@@ -27,9 +27,12 @@ BATCH_SIZE = [int(item) for item in args.batchsizes.split(',')]
 REPLAY_MEMORY_SIZE = [int(item) for item in args.rm_size.split(',')]
 LEARN_EVERY = [int(item) for item in args.learn_every.split(',')]
 WAITING_ADDED = [int(item) for item in args.waiting_added.split(',')]
+DISTANCE_ADDED = [int(item) for item in args.distance_added.split(',')]
+SPEED_ADDED = [int(item) for item in args.speed_added.split(',')]
 
 # Make a list of hyper params to tune
-hyper_parameters = dict(lrs=LRS, batch_size=BATCH_SIZE, rm_size=REPLAY_MEMORY_SIZE, learn_every=LEARN_EVERY, waiting_added=WAITING_ADDED)
+hyper_parameters = dict(lrs=LRS, batch_size=BATCH_SIZE, rm_size=REPLAY_MEMORY_SIZE, learn_every=LEARN_EVERY,
+                        waiting_added=WAITING_ADDED, distance_added=DISTANCE_ADDED, speed_added=SPEED_ADDED)
 param_values = [v for v in hyper_parameters.values()]
 # 0.0001 32 kan ook, die is in principe de langzaamste leerder, maar leert misschien wel het langst door.
 # 0.001/0.0001 met 128 best. 0.0001 ook met 32 oke, misschien kleine lr beter met grotere replay?
@@ -41,10 +44,10 @@ def main():
 
     # Train the Deep Reinforcement Learning agent with the list of hyper parameters provided.
     if TRAIN:
-        for lr, batch_size, rm_size, learn_every, waiting_added in product(*param_values):
-            config = setup_config('train', 'train', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added)
-            config_val = setup_config('val', 'val', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added)
-            config_test = setup_config('test', 'test', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added)
+        for lr, batch_size, rm_size, learn_every, waiting_added, distance_added, speed_added in product(*param_values):
+            config = setup_config('train', 'train', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added, distance_added, speed_added)
+            config_val = setup_config('val', 'val', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added, distance_added, speed_added)
+            config_test = setup_config('test', 'test', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added, distance_added, speed_added)
             normalized_trajectories = TRAJECTORIES * learn_every
 
             start = time.time()

@@ -30,6 +30,8 @@ def parse_arguments():
     parser.add_argument("--learn_every", type=str, default="4")
     parser.add_argument("--smdp", type=int, default=1)
     parser.add_argument("--waiting_added", type=str, default="1")
+    parser.add_argument("--distance_added", type=str, default="1")
+    parser.add_argument("--speed_added", type=str, default="1")
 
     return parser.parse_args()
 
@@ -87,7 +89,7 @@ def parse_roadnet(roadnet_file):
     return lane_phase_info_dict
 
 
-def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=1, waiting_added=1):
+def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=1, waiting_added=1, distance_added=1, speed_added=1):
     """Update the configuration file
 
     Params
@@ -105,7 +107,7 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
     with open('src/config.json') as json_file:
         config = json.load(json_file)
 
-    config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "_rm_size=" + str(rm_size) + "_learn_every=" + str(learn_every) + "_smdp=" + str(smdp) +"_waiting_added=" +str(waiting_added)
+    config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "_rm_size=" + str(rm_size) + "_learn_every=" + str(learn_every) + "_smdp=" + str(smdp) +"_waiting_added=" +str(waiting_added) +"_distance_added=" +str(distance_added) +"_speed_added=" +str(speed_added)
     if data_set_mode == 'train':
         scenario = args.scenario
     if data_set_mode == 'test':
@@ -131,6 +133,8 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
     config['learn_every'] = learn_every
     config['smdp'] = smdp
     config['waiting_added'] = waiting_added
+    config['distance_added'] = distance_added
+    config['speed_added'] = speed_added
 
     # Make all paths in advance.
     path = "{}/experiments".format(args.output_dir)

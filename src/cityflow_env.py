@@ -37,8 +37,8 @@ class CityFlowEnv:
         self.phase_log = []
 
         self.WAITING = config['waiting_added']
-        self.SPEED = 0
-        self.DISTANCE = 1
+        self.DISTANCE = config['distance_added']
+        self.SPEED = config['speed_added']
         self.state_normalizer = Normalizer(len(config['lane_phase_info'][self.intersection_id]['start_lane']), config['norm_tau'])
         self.reward_normalizer = Normalizer(1, config['norm_tau'])
 
@@ -96,9 +96,15 @@ class CityFlowEnv:
         # Add current phase as a one-hot-vector.
         # CHANGE when straight
         # phases = np.zeros(2)
-        phases = np.zeros(len(self.phase_list))
-        if self.current_phase is not -1:
-            phases[self.current_phase] = 1
+        if self.config['smdp'] == 1:
+            phases = np.zeros(len(self.phase_list))
+            if self.current_phase is not -1:
+                phases[self.current_phase] = 1
+
+        if self.config['smdp'] == 0:
+            phases = np.zeros(len(self.phase_list) + 1)  # To represent yellow light as an additional phase.
+            index = self.current_phase + 1
+            phases[index] = 1
 
         # State of LIT: all vehicles per lane + current phase.
         combined_state = lane_vehicle_count + list(phases)

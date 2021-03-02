@@ -25,13 +25,15 @@ cd Eigen/Eigen && python $HOME/Eigen/Eigen/src/tuning.py\
   --exp_name 12.0.hangzou2_state_2.0\
   --num_step 3600\
   --trajectories 2000\
-  --lrs "0.0001"\
+  --lrs "0.001"\
   --batchsizes "528"\
   --output_dir "$TMPDIR"\
   --rm_size "360000"\
   --learn_every "4"\
-  --smdp 0\
+  --smdp 1\
   --waiting_added "1"\
+  --distance_added "0"\
+  --speed_added "0"\
 
 # copy checkpoints to home directory
 mkdir -p $HOME/lisa_output
