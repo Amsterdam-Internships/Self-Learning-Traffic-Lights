@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import pickle
 import numpy as np
+import datetime
 
 """
 This file contains various helper methods.
@@ -28,10 +29,10 @@ def parse_arguments():
     parser.add_argument("--output_dir", type=str, default="./")
     parser.add_argument("--rm_size", type=str, default="36000")
     parser.add_argument("--learn_every", type=str, default="4")
-    parser.add_argument("--smdp", type=int, default=1)
-    parser.add_argument("--waiting_added", type=str, default="1")
-    parser.add_argument("--distance_added", type=str, default="1")
-    parser.add_argument("--speed_added", type=str, default="1")
+    parser.add_argument("--smdp", type=int)
+    parser.add_argument("--waiting_added", type=str)
+    parser.add_argument("--distance_added", type=str)
+    parser.add_argument("--speed_added", type=str)
 
     return parser.parse_args()
 
@@ -89,7 +90,7 @@ def parse_roadnet(roadnet_file):
     return lane_phase_info_dict
 
 
-def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=1, waiting_added=1, distance_added=1, speed_added=1):
+def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=0, waiting_added=0, distance_added=0, speed_added=0):
     """Update the configuration file
 
     Params
@@ -117,10 +118,6 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
     config["flowFile"] = "data/{}/{}".format(scenario, config["flowFile"])
     config["roadnetFile"] = "data/{}/{}".format(scenario, config["roadnetFile"])
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
-    config["roadnetLogFile"] = "{}/experiments/{}/{}/{}/{}".format(args.output_dir, args.exp_name, experiment_mode, config['hyperparams'],
-                                                                config["roadnetLogFile"])
-    config["replayLogFile"] = "{}/experiments/{}/{}/{}/{}".format(args.output_dir, args.exp_name, experiment_mode, config['hyperparams'],
-                                                               config["replayLogFile"])
     config['num_step'] = args.num_step
     config['data_set_mode'] = data_set_mode
     config['scenario'] = scenario
@@ -161,6 +158,16 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
             os.mkdir(path)
         except OSError:
             print("Creation of the directory %s failed" % path)
+
+    path = path + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
+    config['path_save'] = path
+    config["roadnetLogFile"] = "{}/{}".format(path, config["roadnetLogFile"])
+    config["replayLogFile"] = "{}/{}".format(path, config["replayLogFile"])
 
     path = "{}/trained_models".format(args.output_dir)
     if not os.path.exists(path):

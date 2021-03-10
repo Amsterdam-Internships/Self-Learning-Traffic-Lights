@@ -124,8 +124,8 @@ class Agent:
         self.loss = loss.item()
         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.qnetwork_local.parameters():
-            param.grad.data.clamp_(-1, 1)
+        # for param in self.qnetwork_local.parameters():
+        #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
         # Update target network.

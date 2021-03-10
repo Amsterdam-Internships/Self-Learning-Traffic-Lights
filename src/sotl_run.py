@@ -11,9 +11,6 @@ https://github.com/tianrang-intelligence/TSCC2019
 Self-organizing traffic lights: A realistic simulation (Cools, S et al., 2013)
 """
 
-PHI = 20
-THETA = 200
-MU = 20
 # values have been raised, because the cost of switch is even higher I think, because it takes longer to return to the ligh
 # because other lights will get in between. Also, just tested a bit. It also changes because mu is a little different.
 
@@ -35,11 +32,19 @@ def run_sotl(config):
     intersection_id = list(lane_phase_info.keys())[0]
     start_lane = lane_phase_info[intersection_id]['start_lane']
 
+    scenario = config['scenario']
+    # Parameter settings:
+    print(scenario)
+    # if scenario == ""
+    phi = 20
+    theta = 200
+    mu = 20
+
     t = 0
     env.reset()
     rho = np.zeros(len(lane_list))
     state = env.get_state_sotl()
-    action = choose_action(state, rho, phase_list, phase_startLane_mapping)
+    action = choose_action(state, rho, phase_list, phase_startLane_mapping, phi, theta, mu)
     last_action = action
 
     while t < config['num_step']:
@@ -62,7 +67,7 @@ def run_sotl(config):
                 if lane == lane2:
                     rho[i] = 0
 
-        action = choose_action(state, rho, phase_list, phase_startLane_mapping)
+        action = choose_action(state, rho, phase_list, phase_startLane_mapping, phi, theta, mu)
 
         if action == last_action:
             env.step(action)
@@ -94,7 +99,7 @@ def run_sotl(config):
     evaluate_one_traffic(config, args.scenario, 'sotl', 'print')
 
 
-def choose_action(state, rho, phase_list, phase_startLane_mapping):
+def choose_action(state, rho, phase_list, phase_startLane_mapping, phi, theta, mu):
     """
     Choose action based on maximum kappa, if condition is met.
 
@@ -117,9 +122,9 @@ def choose_action(state, rho, phase_list, phase_startLane_mapping):
     cars_approaching_green = sum([state["lane_waiting_vehicle_count"][i]
                                   for i in phase_startLane_mapping[state["current_phase"] + 1]])
 
-    if state["current_phase_time"] >= PHI:
-        if not 0 < cars_approaching_green < MU:
-            if kappa.max() > THETA:
+    if state["current_phase_time"] >= phi:
+        if not 0 < cars_approaching_green < mu:
+            if kappa.max() > theta:
                 action = kappa.argmax()
                 # # if state["current_phase"] == 1:  # use if only 2 actions (because it goes through full action cycle)
                 # # if cur_phase == len(phase_list) - 1:

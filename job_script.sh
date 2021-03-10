@@ -4,12 +4,14 @@
 #SBATCH -t 99:00:00
 #SBATCH -p gpu_shared
 
-#SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-type=END
 #SBATCH --mail-user=sierkkanis@hotmail.com
 
 #Loading modules
 #module load 2020
 #module load Python
+
+source activate sierk
 
 # declare run
 #experiment= "$TMPDIR"/test
@@ -18,7 +20,7 @@ echo "starting training run experiment"
 mkdir "$TMPDIR"/experiments
 
 # execute training script
-cd Eigen/Eigen && python $HOME/Eigen/Eigen/src/tuning.py\
+cd Eigen/Eigen && pip install --user -e . && python $HOME/Eigen/Eigen/src/tuning.py\
   --scenario_val "7.0.hangzou1_1x1_turns"\
   --scenario "7.1.hangzou2_1x1_turns"\
   --scenario_test "7.2.hangzou3_1x1_turns"\
@@ -31,7 +33,7 @@ cd Eigen/Eigen && python $HOME/Eigen/Eigen/src/tuning.py\
   --rm_size "360000"\
   --learn_every "4"\
   --smdp 1\
-  --waiting_added "1"\
+  --waiting_added "0"\
   --distance_added "0"\
   --speed_added "0"\
 

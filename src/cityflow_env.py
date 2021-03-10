@@ -39,6 +39,16 @@ class CityFlowEnv:
         self.WAITING = config['waiting_added']
         self.DISTANCE = config['distance_added']
         self.SPEED = config['speed_added']
+
+        self.ALL_VEHICLES_MAX = 1
+        self.WAITING_MAX = 1
+        self.MAX_DISTANCE = 1
+        self.MAX_SPEED = 1
+        # self.ALL_VEHICLES_MAX = 40
+        # self.WAITING_MAX = 30
+        # self.MAX_DISTANCE = 300
+        # self.MAX_SPEED = 11
+
         self.state_normalizer = Normalizer(len(config['lane_phase_info'][self.intersection_id]['start_lane']), config['norm_tau'])
         self.reward_normalizer = Normalizer(1, config['norm_tau'])
 
@@ -86,7 +96,7 @@ class CityFlowEnv:
 
     def get_state(self):
 
-        lane_vehicle_count = [self.eng.get_lane_vehicle_count()[lane] for lane in self.start_lane]
+        lane_vehicle_count = [self.eng.get_lane_vehicle_count()[lane]/self.ALL_VEHICLES_MAX for lane in self.start_lane]
 
         # # Normalise LIT state.
         # if self.config['normalize_input'] == 1:
@@ -110,7 +120,7 @@ class CityFlowEnv:
         combined_state = lane_vehicle_count + list(phases)
 
         if self.WAITING:
-            lane_waiting_vehicle_count = [self.eng.get_lane_waiting_vehicle_count()[lane] for lane in self.start_lane]
+            lane_waiting_vehicle_count = [self.eng.get_lane_waiting_vehicle_count()[lane]/self.WAITING_MAX for lane in self.start_lane]
             # TODO is this step unnecessary?
             lane_moving_vehicle_count = np.array(lane_vehicle_count) - np.array(lane_waiting_vehicle_count)
 
@@ -125,28 +135,35 @@ class CityFlowEnv:
         #     combined_state = np.array(list(lane_vehicle_count) +
         #                               list(phases))
         if self.DISTANCE:
-            distances_per_lane = [int(np.nan_to_num(np.mean([float(self.eng.get_vehicle_info(vehicle_id)['distance'])
-                                                             for vehicle_id in self.eng.get_lane_vehicles()[lane]])))
+            distances_per_lane = [np.nan_to_num(np.mean([float(self.eng.get_vehicle_info(vehicle_id)['distance'])
+                                                             for vehicle_id in self.eng.get_lane_vehicles()[lane]])/self.MAX_DISTANCE)
                                   for lane in self.start_lane]
             combined_state = combined_state + distances_per_lane
 
         if self.SPEED:
-            speeds_per_lane = np.zeros(len(self.start_lane))
-            vehicles_per_lane = np.zeros(len(self.start_lane))
+            speeds_per_lane = [np.nan_to_num(np.mean([float(self.eng.get_vehicle_info(vehicle_id)['speed'])
+                                                             for vehicle_id in self.eng.get_lane_vehicles()[lane]])/self.MAX_SPEED)
+                                  for lane in self.start_lane]
+            combined_state = combined_state + speeds_per_lane
 
-            speed_per_vehicle = self.eng.get_vehicle_speed()
-            for vehicle_id, speed in speed_per_vehicle.items():
-                for i, lane in enumerate(self.start_lane):
-                    vehicle_info = self.eng.get_vehicle_info(vehicle_id)
-                    if vehicle_info['drivable'] == lane:
-                        if speed > 0.1:
-                            speeds_per_lane[i] += speed
-                            vehicles_per_lane[i] += 1
-            average_speed_per_lane = np.nan_to_num(speeds_per_lane / vehicles_per_lane)
-
-            # Add average speed of moving cars per lane.
-            combined_state = np.array(list(combined_state) +
-                                      list(average_speed_per_lane))
+        # if self.SPEED:
+        #     print('speed')
+        #     speeds_per_lane = np.zeros(len(self.start_lane))
+        #     vehicles_per_lane = np.zeros(len(self.start_lane))
+        #
+        #     speed_per_vehicle = self.eng.get_vehicle_speed()
+        #     for vehicle_id, speed in speed_per_vehicle.items():
+        #         for i, lane in enumerate(self.start_lane):
+        #             vehicle_info = self.eng.get_vehicle_info(vehicle_id)
+        #             if vehicle_info['drivable'] == lane:
+        #                 if speed > 0.1:
+        #                     speeds_per_lane[i] += speed
+        #                     vehicles_per_lane[i] += 1
+        #     average_speed_per_lane = np.nan_to_num(speeds_per_lane / vehicles_per_lane)
+        #
+        #     # Add average speed of moving cars per lane.
+        #     combined_state = np.array(list(combined_state) +
+        #                               list(average_speed_per_lane))
 
         # if self.DISTANCE:
         #     speeds_per_lane = np.zeros(len(self.start_lane))
@@ -194,31 +211,31 @@ class CityFlowEnv:
 
         df = pd.DataFrame({self.intersection_id: self.phase_log[:self.config['num_step']]})
 
-        path = "{}/experiments".format(args.output_dir)
-        if not os.path.exists(path):
-            try:
-                os.mkdir(path)
-            except OSError:
-                print("Creation of the directory %s failed" % path)
-        path = "{}/experiments/{}".format(args.output_dir, self.config['exp_name'])
-        if not os.path.exists(path):
-            try:
-                os.mkdir(path)
-            except OSError:
-                print("Creation of the directory %s failed" % path)
-        path = "{}/experiments/{}/{}".format(args.output_dir, self.config['exp_name'], self.config["mode"])
-        if not os.path.exists(path):
-            try:
-                os.mkdir(path)
-            except OSError:
-                print("Creation of the directory %s failed" % path)
-        path = "{}/experiments/{}/{}/{}".format(args.output_dir, self.config['exp_name'], self.config["mode"], self.config['hyperparams'])
-        if not os.path.exists(path):
-            try:
-                os.mkdir(path)
-            except OSError:
-                print("Creation of the directory %s failed" % path)
-
+        # path = "{}/experiments".format(args.output_dir)
+        # if not os.path.exists(path):
+        #     try:
+        #         os.mkdir(path)
+        #     except OSError:
+        #         print("Creation of the directory %s failed" % path)
+        # path = "{}/experiments/{}".format(args.output_dir, self.config['exp_name'])
+        # if not os.path.exists(path):
+        #     try:
+        #         os.mkdir(path)
+        #     except OSError:
+        #         print("Creation of the directory %s failed" % path)
+        # path = "{}/experiments/{}/{}".format(args.output_dir, self.config['exp_name'], self.config["mode"])
+        # if not os.path.exists(path):
+        #     try:
+        #         os.mkdir(path)
+        #     except OSError:
+        #         print("Creation of the directory %s failed" % path)
+        # path = "{}/experiments/{}/{}/{}".format(args.output_dir, self.config['exp_name'], self.config["mode"], self.config['hyperparams'])
+        # if not os.path.exists(path):
+        #     try:
+        #         os.mkdir(path)
+        #     except OSError:
+        #         print("Creation of the directory %s failed" % path)
+        path = self.config['path_save']
         df.to_csv(os.path.join(path, 'signal_plan_template.txt'), index=None)
 
         path = "{}/trained_models/{}/{}".format(args.output_dir, self.config["exp_name"], self.config['hyperparams'])

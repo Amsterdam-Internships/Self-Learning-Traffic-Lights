@@ -58,13 +58,13 @@ def dqn(n_trajactories, config, config_val, config_test):
             'hyperparams']) + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         writer = SummaryWriter(log_dir, comment=f' batch_size={11} lr={0.1}')
 
-    # Load saved checkpoint (because of epsilon not in use).
-    if LOAD == 1:
-        checkpoint = torch.load("trained_models/{}/checkpoint.tar".format(args.exp_name))
-        agent.qnetwork_local.load_state_dict(checkpoint['model_state_dict'])
-        agent.qnetwork_target.load_state_dict(checkpoint['model_state_dict'])
-        agent.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        stats_train = checkpoint['stats']
+    # # Load saved checkpoint (because of epsilon not in use).
+    # if LOAD == 1:
+    #     checkpoint = torch.load("trained_models/{}/checkpoint.tar".format(args.exp_name))
+    #     agent.qnetwork_local.load_state_dict(checkpoint['model_state_dict'])
+    #     agent.qnetwork_target.load_state_dict(checkpoint['model_state_dict'])
+    #     agent.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    #     stats_train = checkpoint['stats']
 
     for trajectory in range(starting_trajectory + 1, n_trajactories + 1):
 
@@ -144,7 +144,13 @@ def dqn(n_trajactories, config, config_val, config_test):
                 for name, weight in agent.qnetwork_target.named_parameters():
                     writer.add_histogram(name + '_qnetwork_target', weight, trajectory)
 
-    stats_test = run_env_smdp(agent, 0, config_test, env_test, "eval")
+    # Load best model and evaluate on test set.
+    agent_test = Agent(state_size, action_size, seed=0)
+    path = "{}/trained_models/{}/{}/checkpoint.tar".format(args.output_dir, args.exp_name, config['hyperparams'])
+    checkpoint = torch.load(path)
+    agent_test.qnetwork_local.load_state_dict(checkpoint['model_state_dict'])
+
+    stats_test = run_env_smdp(agent_test, 0, config_test, env_test, "eval")
     env_test.log()
     if TENSORBOARD:
         writer.add_scalar('Average Travel Time Test', stats_test['travel_time'], 0)
@@ -171,7 +177,7 @@ def run_env_smdp(agent, eps, config, env, mode=None):
         env (CityFlowEnv): CityFlow environment
         mode (string): agent only takes step on 'train' mode
     """
-    stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0},
+    stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0},
              'travel_time': 0}
 
     t = 0

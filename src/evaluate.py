@@ -23,9 +23,13 @@ def main():
 
 def evaluate_one_traffic(config, scenario, mode='train', printing='no_printing'):
     args = parse_arguments()
-    plan_file = "{}/experiments/{}/{}/{}/signal_plan_template.txt".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
-    out_file = "{}/experiments/{}/{}/{}/evaluation.txt".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
-    out_file2 = "{}/experiments/{}/{}/{}/travel_time_data.json".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
+    plan_file = config['path_save'] + '/signal_plan_template.txt'
+    out_file = config['path_save'] + '/evaluation.txt'
+    out_file2 = config['path_save'] + '/travel_time_data.json'
+
+    # plan_file = "{}/experiments/{}/{}/{}/signal_plan_template.txt".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
+    # out_file = "{}/experiments/{}/{}/{}/evaluation.txt".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
+    # out_file2 = "{}/experiments/{}/{}/{}/travel_time_data.json".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
 
     if check(plan_file, config["num_step"]):
         tt, actions, tt_list = cal_travel_time(config, plan_file)
@@ -79,7 +83,7 @@ def cal_travel_time(dic_sim_setting, plan_file):
     plan = pd.read_csv(plan_file, sep="\t", header=0, dtype=int)
     intersection_id = plan.columns[0]
 
-    actions = {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
+    actions = {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0}
     tt_list = []
 
     for step in range(dic_sim_setting["num_step"]):
@@ -132,9 +136,11 @@ def check(plan_file, num_step):
         # check phase itself
         if next_phase == '':
             continue
-        if next_phase not in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
+        # if next_phase not in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
+        if next_phase not in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
             flag = False
-            error_info = 'Phase must be in [0, 1, 2, 3, 4, 5, 6, 7, 8]!'
+            # error_info = 'Phase must be in [0, 1, 2, 3, 4, 5, 6, 7, 8]!'
+            error_info = 'Phase must be in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]!'
             break
 
         # check changing phase
