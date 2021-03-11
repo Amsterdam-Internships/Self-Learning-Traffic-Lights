@@ -44,7 +44,7 @@ def main():
 
     # Train the Deep Reinforcement Learning agent with the list of hyper parameters provided.
     if TRAIN:
-        print('version 1.0.0')  # To check if the right version is installed.
+        print('version 1.0.2')  # To check if the right version is installed.
         for lr, batch_size, rm_size, learn_every, waiting_added, distance_added, speed_added in product(*param_values):
             config = setup_config('train', 'train', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added, distance_added, speed_added)
             config_val = setup_config('val', 'val', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added, distance_added, speed_added)
@@ -56,6 +56,7 @@ def main():
             end = time.time()
             print("\nThis training loop took this amount of seconds: ", end-start)
 
+    # TODO this should be part of another 'compare' file, in which perhaps the agent is reloaded with the saved network.
     # Compare the Deep Reinforcement Learning agent with baseline methods.
     config_train = setup_config('train', 'sotl_train')
     run_sotl(config_train)
