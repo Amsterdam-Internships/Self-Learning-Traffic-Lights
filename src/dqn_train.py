@@ -237,7 +237,7 @@ def run_env_mdp(agent, eps, config, env, mode=None):
         env (CityFlowEnv): CityFlow environment
         mode (string): agent only takes step on 'train' mode
     """
-    stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0},
+    stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0},
              'travel_time': 0}
 
     yellow_time = 0

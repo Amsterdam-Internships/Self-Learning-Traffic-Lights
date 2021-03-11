@@ -1,7 +1,7 @@
 #!/bin/bash
 #Set job requirements
 #SBATCH -N 1
-#SBATCH -t 99:00:00
+#SBATCH -t 72:00:00
 #SBATCH -p gpu_shared
 
 #SBATCH --mail-type=END
@@ -33,8 +33,8 @@ cd Eigen/Eigen && pip install --user -e . && python $HOME/Eigen/Eigen/src/tuning
   --rm_size "360000"\
   --learn_every "4"\
   --smdp 1\
-  --waiting_added "0"\
-  --distance_added "0"\
+  --waiting_added "1"\
+  --distance_added "1"\
   --speed_added "0"\
 
 # copy checkpoints to home directory

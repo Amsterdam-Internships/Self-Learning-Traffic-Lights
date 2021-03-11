@@ -13,29 +13,26 @@ to subsequently be trained with the newly created data.
 
 ## In Short
 
-Relevance: Improve traffic flow to improve mobility and CO2 emission.
+Relevance: With the recent advances in reinforcement learning and the increase of traffic data, it is natural to wonder whether traffic networks can be optimized by machine learning to improve mobility and CO2 emission.
 
-Idea: Multi agent DRL approach with 1 agent per intersection.
+Approach: Multi-Agent Deep Reinforcement Learning with one agent per intersection.
 
-Data: Learn from simulating virtual traffic.
+Data: Real-world traffic flow data virtually simulated in the CityFlow Simulator .
 
-Literature: focused on increasing amount of agents, but no consensus about:
-- Objective: what contains ‘improving traffic flow’?
-- Rewards: what to minimize to obtain objective?
-- State: what traffic input is necessary, without being abundant, to minimize rewards?
-- Actions: How many options can the agent choose from?
-
-Addition to the field: this project will focus on *revising* the current state of Deep Reinforcement Learning (DRL) for smart Traffic Light Control (TLC).
+Contributions: Revisiting the fundamental framework to apply reinforcement learning techniques to.
+- State: what traffic input is necessary, without being abundant, to maximize rewards?
+- Actions: what actions does the agent have at its proposal?
+- Markov Decision Process: at what timesteps does the agent perform an action?
 
 
 ---
 
 ## Project Folder Structure
 
-1) [`src`](./src): Folder containing all the Python code.
-1) [`data`](./data): Folder containing the different traffic data sets.
-1) [`experiments`](./experiments): Folder containing results of different experiment setups.
-1) [`media`](./media): Folder concerning visualisation of the simulation environment.
+1) [`src`](./src): Python code.
+1) [`data`](./data): Traffic flow data sets.
+1) [`trained_models`](./trained_models): Trained models by Q-learning.
+1) [`media`](./media): Visualisation of the simulation environment.
 
 ---
 

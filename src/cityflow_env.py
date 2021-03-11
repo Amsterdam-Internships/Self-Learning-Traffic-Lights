@@ -40,14 +40,14 @@ class CityFlowEnv:
         self.DISTANCE = config['distance_added']
         self.SPEED = config['speed_added']
 
-        self.ALL_VEHICLES_MAX = 1
-        self.WAITING_MAX = 1
-        self.MAX_DISTANCE = 1
-        self.MAX_SPEED = 1
-        # self.ALL_VEHICLES_MAX = 40
-        # self.WAITING_MAX = 30
-        # self.MAX_DISTANCE = 300
-        # self.MAX_SPEED = 11
+        # self.ALL_VEHICLES_MAX = 1
+        # self.WAITING_MAX = 1
+        # # self.MAX_DISTANCE = 1
+        # self.MAX_SPEED = 1
+        self.ALL_VEHICLES_MAX = 40
+        self.WAITING_MAX = 30
+        self.MAX_DISTANCE = 300
+        self.MAX_SPEED = 11
 
         self.state_normalizer = Normalizer(len(config['lane_phase_info'][self.intersection_id]['start_lane']), config['norm_tau'])
         self.reward_normalizer = Normalizer(1, config['norm_tau'])
