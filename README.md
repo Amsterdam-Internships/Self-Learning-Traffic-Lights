@@ -13,13 +13,13 @@ to subsequently be trained with the newly created data.
 
 ## In Short
 
-Relevance: With the recent advances in reinforcement learning and the increase of traffic data, it is natural to wonder whether traffic networks can be optimized by machine learning to improve mobility and CO2 emission.
+Relevance: with the recent advances in reinforcement learning and the increasement of traffic data, it is natural to wonder whether traffic networks can be optimized by machine learning to improve mobility and CO2 emission.
 
 Approach: Multi-Agent Deep Reinforcement Learning with one agent per intersection.
 
-Data: Real-world traffic flow data virtually simulated in the CityFlow Simulator .
+Data: real-world traffic flow data virtually simulated in the CityFlow Simulator .
 
-Contributions: Revisiting the fundamental framework to apply reinforcement learning techniques to.
+Contributions: revisiting the fundamental framework of Adaptive Traffic Signal Control to apply reinforcement learning techniques to.
 - State: what traffic input is necessary, without being abundant, to maximize rewards?
 - Actions: what actions does the agent have at its proposal?
 - Markov Decision Process: at what timesteps does the agent perform an action?
@@ -29,10 +29,10 @@ Contributions: Revisiting the fundamental framework to apply reinforcement learn
 
 ## Project Folder Structure
 
-1) [`src`](./src): Python code.
-1) [`data`](./data): Traffic flow data sets.
-1) [`trained_models`](./trained_models): Trained models by Q-learning.
-1) [`media`](./media): Visualisation of the simulation environment.
+1) [`src`](./src): python code.
+1) [`data`](./data): traffic flow data sets.
+1) [`trained_models`](./trained_models): trained models by Q-learning.
+1) [`media`](./media): visualisation of the simulation environment.
 
 ---
 
@@ -52,7 +52,7 @@ which simulates the traffic flow of a given data set of traffic trajectories.
 [`dqn_agent.py`](./src/dqn_agent.py) learns from the experiences by updating the parameters of its neural network.  
 [`dqn_model.py`](./src/dqn_model.py) declares the neural network of dqn_agent.py.  
 [`cityflow_env.py`](./src/cityflow_env.py) declares the state-action-reward representation of the environment the agent is interacting with.  
-[`tuning.py`](./src/tuning.py) is used to tune the hyperparameters by looping over the given hyperparameters and evaluating the performance with baseline methods.
+[`tuning.py`](./src/tuning.py) loops over the given hyperparameters and evaluates the performance with baseline methods.
 
 ---
 
