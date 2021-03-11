@@ -38,7 +38,7 @@ Contributions: Revisiting the fundamental framework to apply reinforcement learn
 
 ## Results
 
-![alt text](https://github.com/Amsterdam-Internships/Self-Learning-Traffic-Lights/tree/master/media/videos/compare.gif)
+![alt text](https://github.com/Amsterdam-Internships/Self-Learning-Traffic-Lights/blob/workinprogress/media/videos/compare.gif)
 
 ---
 
