@@ -21,12 +21,12 @@ mkdir "$TMPDIR"/experiments
 
 # execute training script
 cd Eigen/Eigen && pip install --user -e . && python $HOME/Eigen/Eigen/src/tuning.py\
-  --scenario_val "7.0.hangzou1_1x1_turns"\
-  --scenario "7.1.hangzou2_1x1_turns"\
-  --scenario_test "7.2.hangzou3_1x1_turns"\
-  --exp_name 12.0.hangzou2_state_2.0\
+  --scenario_test "7.0.hangzou1_1x1_turns"\
+  --scenario_val "7.1.hangzou2_1x1_turns"\
+  --scenario "7.2.hangzou3_1x1_turns"\
+  --exp_name 13.0.hangzou3_state_2.0\
   --num_step 3600\
-  --trajectories 2000\
+  --trajectories 1500\
   --lrs "0.001"\
   --batchsizes "528"\
   --output_dir "$TMPDIR"\
@@ -35,7 +35,7 @@ cd Eigen/Eigen && pip install --user -e . && python $HOME/Eigen/Eigen/src/tuning
   --smdp 1\
   --waiting_added "1"\
   --distance_added "1"\
-  --speed_added "0"\
+  --speed_added "1"\
 
 # copy checkpoints to home directory
 mkdir -p $HOME/lisa_output

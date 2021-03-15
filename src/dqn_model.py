@@ -13,8 +13,8 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 class QNetwork(nn.Module):
     """ Actor (Policy) Model."""
 
-    def __init__(self, state_size, action_size, seed, fc1_unit=32,
-                 fc2_unit=32):
+    def __init__(self, state_size, action_size, seed, fc1_unit=16,
+                 fc2_unit=16):
         """
         Initialize parameters and build model.
         Params
