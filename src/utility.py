@@ -115,8 +115,8 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
         scenario = args.scenario_test
     if data_set_mode == 'val':
         scenario = args.scenario_val
-    config["flowFile"] = "data/{}/{}".format(scenario, config["flowFile"])
-    config["roadnetFile"] = "data/{}/{}".format(scenario, config["roadnetFile"])
+    config["flowFile"] = "data/1x1/{}/{}".format(scenario, config["flowFile"])
+    config["roadnetFile"] = "data/1x1/{}".format(config["roadnetFile"])
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
     config['num_step'] = args.num_step
     config['data_set_mode'] = data_set_mode
@@ -153,11 +153,11 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
         except OSError:
             print("Creation of the directory %s failed" % path)
     path = "{}/experiments/{}/{}/{}".format(args.output_dir, config['exp_name'], config["mode"], config['hyperparams'])
-    if not os.path.exists(path):
-        try:
-            os.mkdir(path)
-        except OSError:
-            print("Creation of the directory %s failed" % path)
+    # if not os.path.exists(path):
+    #     try:
+    #         os.mkdir(path)
+    #     except OSError:
+    #         print("Creation of the directory %s failed" % path)
 
     path = path + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     if not os.path.exists(path):

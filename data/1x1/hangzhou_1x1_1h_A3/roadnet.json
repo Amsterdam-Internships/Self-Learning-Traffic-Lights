@@ -1064,6 +1064,34 @@
               6,
               7
             ]
+          },
+          {
+            "time": 30,
+            "availableRoadLinks": [
+              1,
+              2
+            ]
+          },
+          {
+            "time": 30,
+            "availableRoadLinks": [
+              3,
+              4
+            ]
+          },
+          {
+            "time": 30,
+            "availableRoadLinks": [
+              5,
+              7
+            ]
+          },
+          {
+            "time": 30,
+            "availableRoadLinks": [
+              6,
+              0
+            ]
           }
         ]
       },

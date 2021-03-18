@@ -2,7 +2,7 @@
 	"interval": 1.0,
 	"seed": 0,
 	"dir": "",
-	"roadnetFile": "roadnet.json",
+	"roadnetFile": "roadnet_1x1.json",
 	"flowFile": "flow.json",
 	"rlTrafficLight": true,
 	"laneChange": false,

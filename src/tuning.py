@@ -16,9 +16,10 @@ This file contains the hyper-parameter loop.
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Running on device: ", device)
+print('version 1.0.4')  # To check if the right version is installed.
 args = parse_arguments()
 
-TRAIN = 1  # Boolean to train or not
+TRAIN = 0  # Boolean to train or not
 
 TRAJECTORIES = args.trajectories
 
@@ -44,7 +45,6 @@ def main():
 
     # Train the Deep Reinforcement Learning agent with the list of hyper parameters provided.
     if TRAIN:
-        print('version 1.0.3 MDP all-cold')  # To check if the right version is installed.
         for lr, batch_size, rm_size, learn_every, waiting_added, distance_added, speed_added in product(*param_values):
             config = setup_config('train', 'train', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added, distance_added, speed_added)
             config_val = setup_config('val', 'val', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added, distance_added, speed_added)
