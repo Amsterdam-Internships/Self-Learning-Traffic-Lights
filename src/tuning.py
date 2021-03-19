@@ -16,7 +16,7 @@ This file contains the hyper-parameter loop.
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Running on device: ", device)
-print('version 1.0.6. mulitple train')  # To check if the right version is installed.
+print('version 1.0.8 multiple train')  # To check if the right version is installed.
 args = parse_arguments()
 
 TRAIN = 1  # Boolean to train or not
@@ -57,7 +57,7 @@ def profile(fnc):
 
     return inner
 
-@profile
+# @profile
 def main():
     # Train the Deep Reinforcement Learning agent with the list of hyper parameters provided.
     if TRAIN:

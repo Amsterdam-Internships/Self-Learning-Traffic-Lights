@@ -17,7 +17,7 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-TENSORBOARD = 0
+TENSORBOARD = 1
 LOAD = 0  # Set to 1 to load checkpoint
 EPS_START = 1
 EPS_END = 0.1
@@ -35,6 +35,16 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
         n_trajactories (int): maximum number of training episodes
         config (json): configuration file to setup the CityFlow engine
     """
+
+    config_train = []
+    envs_train = []
+    for scenario in args.scenarios_train:
+        config = setup_config(scenario, 'train', time, lr, batch_size, rm_size,
+                                         learn_every, smdp, waiting_added,
+                                         distance_added, speed_added)
+        config_train.append(config)
+        envs_train.append(CityFlowEnv(config))
+
     config_val = setup_config(args.scenario_val, 'val', time, lr, batch_size, rm_size, learn_every, smdp, waiting_added,
                  distance_added, speed_added)
     env_val = CityFlowEnv(config_val)
@@ -58,10 +68,8 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
         writer = SummaryWriter(log_dir, comment=f' batch_size={11} lr={0.1}')
 
     for trajectory in range(starting_trajectory + 1, n_trajactories + 1):
-        # TODO make list of configs at the start, and list of envs.
-        config = setup_config(args.scenarios_train[data_set_index], 'train', time, lr, batch_size, rm_size, learn_every, smdp, waiting_added,
-                         distance_added, speed_added)
-        env = CityFlowEnv(config)
+        config = config_train[data_set_index]
+        env = envs_train[data_set_index]
         data_set_index = (data_set_index + 1) % len(args.scenarios_train)
 
         # Perform training run through environment.
@@ -84,16 +92,12 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
         if trajectory % stats_every == stats_every - 1:
 
             # Get training stats.
-            for i, scenario in enumerate(args.scenarios_train):
-                config_train_eval = setup_config(scenario, 'train', time, lr, batch_size, rm_size,
-                                      learn_every, smdp, waiting_added,
-                                      distance_added, speed_added)
-                env_train_eval = CityFlowEnv(config_train_eval)
-                stats_train = []
+            for i in range(len(config_train)):
 
+                stats_train = []
                 # Perform evaluation run through environment on this training scenario.
                 if smdp:
-                    stats_one_training_run = run_env_smdp(agent, 0, config_train_eval, env_train_eval, "eval")
+                    stats_one_training_run = run_env_smdp(agent, 0, config_train[i], envs_train[i], "eval")
                     stats_train.append(stats_one_training_run)
                 # else:
                 #     stats_train = run_env_mdp(agent, 0, config, env, "eval")
@@ -101,7 +105,7 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
                 # Save logs of best run on this training scenario.
                 if stats_one_training_run['travel_time'] < best_travel_time_train[i]:
                     print('BEST TRAIN on {}'.format(i))
-                    env_train_eval.log()
+                    envs_train[i].log()
                     best_travel_time_train[i] = stats_one_training_run['travel_time']
 
             average_travel_time_training_set = np.mean([x["travel_time"] for x in stats_train])
@@ -174,11 +178,8 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
 
     # Create the replay logs.
     travel_times_training = []
-    for i, scenario in enumerate(args.scenarios_train):
-        config_train_eval = setup_config(scenario, 'train', time, lr, batch_size, rm_size,
-                                         learn_every, smdp, waiting_added,
-                                         distance_added, speed_added)
-        travel_times_training.append(evaluate_one_traffic(config_train_eval))
+    for i in range(len(config_train)):
+        travel_times_training.append(evaluate_one_traffic(config_train[i]))
     print("")
     print("====================== travel time ======================")
     print('train: average over multiple train sets: ' + ": {:.2f} s".format(np.mean(travel_times_training)))

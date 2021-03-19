@@ -138,14 +138,16 @@ class CityFlowEnv:
         #     combined_state = np.array(list(lane_vehicle_count) +
         #                               list(phases))
         if self.DISTANCE:
-            distances_per_lane = [np.nan_to_num(np.mean([float(self.eng.get_vehicle_info(vehicle_id)['distance'])
-                                                             for vehicle_id in self.eng.get_lane_vehicles()[lane]])/self.MAX_DISTANCE)
+            distances_per_lane = [np.mean([float(self.eng.get_vehicle_info(vehicle_id)['distance'])
+                                                             for vehicle_id in self.eng.get_lane_vehicles()[lane]])/self.MAX_DISTANCE
+                                  if len(self.eng.get_lane_vehicles()[lane]) != 0 else 0.
                                   for lane in self.start_lane]
             combined_state = combined_state + distances_per_lane
 
         if self.SPEED:
-            speeds_per_lane = [np.nan_to_num(np.mean([float(self.eng.get_vehicle_info(vehicle_id)['speed'])
-                                                             for vehicle_id in self.eng.get_lane_vehicles()[lane]])/self.MAX_SPEED)
+            speeds_per_lane = [np.mean([float(self.eng.get_vehicle_info(vehicle_id)['speed'])
+                                                             for vehicle_id in self.eng.get_lane_vehicles()[lane]])/self.MAX_SPEED
+                                  if len(self.eng.get_lane_vehicles()[lane]) != 0 else 0.
                                   for lane in self.start_lane]
             combined_state = combined_state + speeds_per_lane
 
