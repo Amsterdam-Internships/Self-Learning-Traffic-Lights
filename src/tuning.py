@@ -16,10 +16,10 @@ This file contains the hyper-parameter loop.
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Running on device: ", device)
-print('version 1.0.4')  # To check if the right version is installed.
+print('version 1.0.6. mulitple train')  # To check if the right version is installed.
 args = parse_arguments()
 
-TRAIN = 0  # Boolean to train or not
+TRAIN = 1  # Boolean to train or not
 
 TRAJECTORIES = args.trajectories
 
@@ -40,37 +40,6 @@ param_values = [v for v in hyper_parameters.values()]
 # ook eens nog wat kleinere lr proberen.
 # met grote replay werkt 0.01 iig niet meer.
 
-
-def main():
-
-    # Train the Deep Reinforcement Learning agent with the list of hyper parameters provided.
-    if TRAIN:
-        for lr, batch_size, rm_size, learn_every, waiting_added, distance_added, speed_added in product(*param_values):
-            config = setup_config('train', 'train', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added, distance_added, speed_added)
-            config_val = setup_config('val', 'val', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added, distance_added, speed_added)
-            config_test = setup_config('test', 'test', lr, batch_size, rm_size, learn_every, args.smdp, waiting_added, distance_added, speed_added)
-            normalized_trajectories = TRAJECTORIES * learn_every
-
-            start = time.time()
-            dqn(normalized_trajectories, config, config_val, config_test)
-            end = time.time()
-            print("\nThis training loop took this amount of seconds: ", end-start)
-
-    # TODO this should be part of another 'compare' file, in which perhaps the agent is reloaded with the saved network.
-    # Compare the Deep Reinforcement Learning agent with baseline methods.
-    config_train = setup_config('train', 'sotl_train')
-    run_sotl(config_train)
-    config_val = setup_config('val', 'sotl_val')
-    run_sotl(config_val)
-    config_test = setup_config('test', 'sotl_test')
-    run_sotl(config_test)
-    # run_sotl_LIT()
-    # random_run()
-
-    # Show travel time per simulation second.
-    # travel_time_plot()
-
-
 def profile(fnc):
     """A decorator that uses cProfile to profile a function"""
 
@@ -87,6 +56,39 @@ def profile(fnc):
         return retval
 
     return inner
+
+@profile
+def main():
+    # Train the Deep Reinforcement Learning agent with the list of hyper parameters provided.
+    if TRAIN:
+        for lr, batch_size, rm_size, learn_every, waiting_added, distance_added, speed_added in product(*param_values):
+            normalized_trajectories = TRAJECTORIES * learn_every
+            start = time.time()
+            time_clean = str(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+            dqn(normalized_trajectories, time_clean, lr, batch_size, rm_size, learn_every, args.smdp, waiting_added, distance_added, speed_added)
+            end = time.time()
+            print("\nThis training loop took this amount of seconds: ", end-start)
+
+    # TODO this should be part of another 'compare' file, in which perhaps the agent is reloaded with the saved network.
+    # Compare the Deep Reinforcement Learning agent with baseline methods.
+
+    travel_times_training_set_sotl = []
+    for i, scenario in enumerate(args.scenarios_train):
+        config_train = setup_config(scenario, 'sotl_train')
+        travel_times_training_set_sotl.append(run_sotl(config_train))
+    print("")
+    print("====================== travel time ======================")
+    print('sotl_train: average over multiple train sets: ' + ": {:.2f} s".format(np.mean(travel_times_training_set_sotl)))
+    config_val = setup_config(args.scenario_val, 'sotl_val')
+    run_sotl(config_val)
+    config_test = setup_config(args.scenario_test, 'sotl_test')
+    run_sotl(config_test)
+    # run_sotl_LIT()
+    # random_run()
+
+    # Show travel time per simulation second.
+    # travel_time_plot()
+
 
 if __name__ == "__main__":
     main()

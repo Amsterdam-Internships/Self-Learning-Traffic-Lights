@@ -17,7 +17,7 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-TENSORBOARD = 1
+TENSORBOARD = 0
 LOAD = 0  # Set to 1 to load checkpoint
 EPS_START = 1
 EPS_END = 0.1
@@ -27,7 +27,7 @@ GAMMA = 0.99  # discount factor (Should be same as in agent file)
 args = parse_arguments()
 
 
-def dqn(n_trajactories, config, config_val, config_test):
+def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waiting_added, distance_added, speed_added):
     """ Deep Q-Learning
 
     Params
@@ -35,41 +35,37 @@ def dqn(n_trajactories, config, config_val, config_test):
         n_trajactories (int): maximum number of training episodes
         config (json): configuration file to setup the CityFlow engine
     """
-
-    env = CityFlowEnv(config)
+    config_val = setup_config(args.scenario_val, 'val', time, lr, batch_size, rm_size, learn_every, smdp, waiting_added,
+                 distance_added, speed_added)
     env_val = CityFlowEnv(config_val)
-    env_test = CityFlowEnv(config_test)
-    intersection_id = list(config['lane_phase_info'].keys())[0]
-    phase_list = config['lane_phase_info'][intersection_id]['phase']
-    # CHANGE when straight
-    # action_size = 2
+
+    intersection_id = list(config_val['lane_phase_info'].keys())[0]
+    phase_list = config_val['lane_phase_info'][intersection_id]['phase']
     action_size = len(phase_list)
-    state_size = len(env.reset())
-    best_travel_time = 100000
+    state_size = len(env_val.reset())
+    best_travel_time_train = np.ones(len(args.scenarios_train)) * 1000000
     best_travel_time_val = 100000
     starting_trajectory = 0
     eps = EPS_START
+    data_set_index = 0
 
-    agent = Agent(state_size, action_size, 0, config['lr'], config['batch_size'], config["rm_size"],
-                  config["learn_every"])
+    agent = Agent(state_size, action_size, 0, lr, batch_size, rm_size,
+                  learn_every)
 
     if TENSORBOARD:
-        log_dir = '{}/experiments/{}/tensorboard/{}'.format(args.output_dir, args.exp_name, config[
-            'hyperparams']) + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        log_dir = '{}/experiments/{}/tensorboard/{}'.format(args.output_dir, args.exp_name, config_val[
+            'hyperparams']) + "_time=" + time
         writer = SummaryWriter(log_dir, comment=f' batch_size={11} lr={0.1}')
 
-    # # Load saved checkpoint (because of epsilon not in use).
-    # if LOAD == 1:
-    #     checkpoint = torch.load("trained_models/{}/checkpoint.tar".format(args.exp_name))
-    #     agent.qnetwork_local.load_state_dict(checkpoint['model_state_dict'])
-    #     agent.qnetwork_target.load_state_dict(checkpoint['model_state_dict'])
-    #     agent.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    #     stats_train = checkpoint['stats']
-
     for trajectory in range(starting_trajectory + 1, n_trajactories + 1):
+        # TODO make list of configs at the start, and list of envs.
+        config = setup_config(args.scenarios_train[data_set_index], 'train', time, lr, batch_size, rm_size, learn_every, smdp, waiting_added,
+                         distance_added, speed_added)
+        env = CityFlowEnv(config)
+        data_set_index = (data_set_index + 1) % len(args.scenarios_train)
 
         # Perform training run through environment.
-        if config['smdp']:
+        if smdp:
             run_env_smdp(agent, eps, config, env, "train")
         else:
             run_env_mdp(agent, eps, config, env, "train")
@@ -84,43 +80,40 @@ def dqn(n_trajactories, config, config_val, config_test):
         lr = config['lr']
 
         # Save and show training stats.
-        stats_every = 10
+        stats_every = 50
         if trajectory % stats_every == stats_every - 1:
 
-            # Perform evaluation run through environment.
-            if config['smdp']:
-                stats_train = run_env_smdp(agent, 0, config, env, "eval")
+            # Get training stats.
+            for i, scenario in enumerate(args.scenarios_train):
+                config_train_eval = setup_config(scenario, 'train', time, lr, batch_size, rm_size,
+                                      learn_every, smdp, waiting_added,
+                                      distance_added, speed_added)
+                env_train_eval = CityFlowEnv(config_train_eval)
+                stats_train = []
+
+                # Perform evaluation run through environment on this training scenario.
+                if smdp:
+                    stats_one_training_run = run_env_smdp(agent, 0, config_train_eval, env_train_eval, "eval")
+                    stats_train.append(stats_one_training_run)
+                # else:
+                #     stats_train = run_env_mdp(agent, 0, config, env, "eval")
+
+                # Save logs of best run on this training scenario.
+                if stats_one_training_run['travel_time'] < best_travel_time_train[i]:
+                    print('BEST TRAIN on {}'.format(i))
+                    env_train_eval.log()
+                    best_travel_time_train[i] = stats_one_training_run['travel_time']
+
+            average_travel_time_training_set = np.mean([x["travel_time"] for x in stats_train])
+            average_reward_training_set = np.mean([x["rewards"] for x in stats_train])
+
+            # Get validation stats.
+            if smdp:
                 stats_val = run_env_smdp(agent, 0, config_val, env_val, "eval")
             else:
-                stats_train = run_env_mdp(agent, 0, config, env, "eval")
                 stats_val = run_env_mdp(agent, 0, config_val, env_val, "eval")
 
-            # Evaluate the maximum Q values on a fixed set of random states.
-            # average_max_qvals = eval_fixed_states(agent, 0, config)
-            average_max_qvals = 0
-
-            print(
-                '\rTrajactory {}:\tTravel Time Train: {:.0f}\tTravel Time Val: {:.0f}\tMean Reward: {:.2f}\tBatch_size: {}\tLearning rate: {:.2g}\tRM '
-                'size: {}\tLearn every: {}\tEpsilon: '
-                '{:.2g}\tMax Q val: {:.1f}\tActions: {}\tActions test: {}'.format(trajectory + 1,
-                                                                                  stats_train['travel_time'],
-                                                                                  stats_val['travel_time'],
-                                                                                  stats_train['rewards'] / config[
-                                                                                      'num_step'],
-                                                                                  config['batch_size'], lr,
-                                                                                  config["rm_size"],
-                                                                                  config["learn_every"],
-                                                                                  eps,
-                                                                                  average_max_qvals,
-                                                                                  stats_train['actions'].values(),
-                                                                                  stats_val['actions'].values()))
-            # Save best model on training set.
-            if stats_train['travel_time'] < best_travel_time:
-                print('BEST TRAIN\n')
-                env.log()
-                best_travel_time = stats_train['travel_time']
-
-            # Save best model on test set.
+            # Save best model on validation set.
             if stats_val['travel_time'] < best_travel_time_val:
                 print('BEST VAL\n')
                 path = "{}/trained_models/{}/{}".format(args.output_dir, args.exp_name, config['hyperparams'])
@@ -132,19 +125,43 @@ def dqn(n_trajactories, config, config_val, config_test):
                 env_val.log()
                 best_travel_time_val = stats_val['travel_time']
 
+            # Evaluate the maximum Q values on a fixed set of random states.
+            # average_max_qvals = eval_fixed_states(agent, 0, config)
+            average_max_qvals = 0
+
+            # Write important stats to Tensorboard.
             if TENSORBOARD:
-                writer.add_scalar('Average Travel Time Train', stats_train['travel_time'], trajectory)
+                writer.add_scalar('Average Travel Time Train', average_travel_time_training_set, trajectory)
                 writer.add_scalar('Average Travel Time VAL', stats_val['travel_time'], trajectory)
                 writer.add_scalar('Eps', eps, trajectory)
                 writer.add_scalar('LR', lr, trajectory)
-                writer.add_scalar('Average Reward', stats_train['rewards'] / config['num_step'], trajectory)
+                writer.add_scalar('Average Reward', average_reward_training_set / config['num_step'], trajectory)
                 writer.add_scalar('Average Max Q Value', average_max_qvals, trajectory)
                 for name, weight in agent.qnetwork_local.named_parameters():
                     writer.add_histogram(name + '_qnetwork_local', weight, trajectory)
                 for name, weight in agent.qnetwork_target.named_parameters():
                     writer.add_histogram(name + '_qnetwork_target', weight, trajectory)
 
+            # Print out stats in terminal.
+            print(
+                '\rTrajactory {}:\tTravel Time Train: {:.0f}\tTravel Time Val: {:.0f}\tMean Reward: {:.2f}\tBatch_size: {}\tLearning rate: {:.2g}\tRM '
+                'size: {}\tLearn every: {}\tEpsilon: '
+                '{:.2g}\tMax Q val: {:.1f}\tActions test: {}'.format(trajectory + 1,
+                                                                                  average_travel_time_training_set,
+                                                                                  stats_val['travel_time'],
+                                                                                  average_reward_training_set / config[
+                                                                                      'num_step'],
+                                                                                  config['batch_size'], lr,
+                                                                                  config["rm_size"],
+                                                                                  config["learn_every"],
+                                                                                  eps,
+                                                                                  average_max_qvals,
+                                                                                  stats_val['actions'].values()))
+
     # Load best model and evaluate on test set.
+    config_test = setup_config(args.scenario_test, 'test', time, lr, batch_size, rm_size, learn_every, smdp, waiting_added,
+                 distance_added, speed_added)
+    env_test = CityFlowEnv(config_test)
     agent_test = Agent(state_size, action_size, seed=0)
     path = "{}/trained_models/{}/{}/checkpoint.tar".format(args.output_dir, args.exp_name, config['hyperparams'])
     checkpoint = torch.load(path)
@@ -156,9 +173,17 @@ def dqn(n_trajactories, config, config_val, config_test):
         writer.add_scalar('Average Travel Time Test', stats_test['travel_time'], 0)
 
     # Create the replay logs.
-    evaluate_one_traffic(config, args.scenario, 'train', 'print')
-    evaluate_one_traffic(config_val, args.scenario_val, 'val', 'print')
-    evaluate_one_traffic(config_test, args.scenario_test, 'test', 'print')
+    travel_times_training = []
+    for i, scenario in enumerate(args.scenarios_train):
+        config_train_eval = setup_config(scenario, 'train', time, lr, batch_size, rm_size,
+                                         learn_every, smdp, waiting_added,
+                                         distance_added, speed_added)
+        travel_times_training.append(evaluate_one_traffic(config_train_eval))
+    print("")
+    print("====================== travel time ======================")
+    print('train: average over multiple train sets: ' + ": {:.2f} s".format(np.mean(travel_times_training)))
+    evaluate_one_traffic(config_val, 'print')
+    evaluate_one_traffic(config_test, 'print')
 
     # Make sure that all pending events have been written to disk.
     if TENSORBOARD:

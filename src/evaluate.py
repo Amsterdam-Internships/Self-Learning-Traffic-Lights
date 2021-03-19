@@ -21,7 +21,7 @@ def main():
     # evaluate_one_traffic(sim_setting, args.scenario)
 
 
-def evaluate_one_traffic(config, scenario, mode='train', printing='no_printing'):
+def evaluate_one_traffic(config, printing='no_printing'):
     args = parse_arguments()
     plan_file = config['path_save'] + '/signal_plan_template.txt'
     out_file = config['path_save'] + '/evaluation.txt'
@@ -30,7 +30,7 @@ def evaluate_one_traffic(config, scenario, mode='train', printing='no_printing')
     # plan_file = "{}/experiments/{}/{}/{}/signal_plan_template.txt".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
     # out_file = "{}/experiments/{}/{}/{}/evaluation.txt".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
     # out_file2 = "{}/experiments/{}/{}/{}/travel_time_data.json".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
-
+    tt = 0
     if check(plan_file, config["num_step"]):
         tt, actions, tt_list = cal_travel_time(config, plan_file)
         if printing == 'print':
@@ -57,6 +57,8 @@ def evaluate_one_traffic(config, scenario, mode='train', printing='no_printing')
     else:
         print("planFile is invalid, Rejected!")
 
+    return tt
+
 
 def cal_travel_time(dic_sim_setting, plan_file):
     dic_sim_setting['saveReplay'] = True
@@ -65,18 +67,23 @@ def cal_travel_time(dic_sim_setting, plan_file):
     # with open('src/config_args2.json', 'w') as outfile:
     #     json.dump(dic_sim_setting, outfile)
 
-    if dic_sim_setting['data_set_mode'] == 'train':
-        with open('src/config_args2.json', 'w') as outfile:
-            json.dump(dic_sim_setting, outfile)
-        eng = cityflow.Engine("src/config_args2.json", thread_num=1)
-    if dic_sim_setting['data_set_mode'] == 'test':
-        with open('src/config_args2_test.json', 'w') as outfile:
-            json.dump(dic_sim_setting, outfile)
-        eng = cityflow.Engine("src/config_args2_test.json", thread_num=1)
-    if dic_sim_setting['data_set_mode'] == 'val':
-        with open('src/config_args2_val.json', 'w') as outfile:
-            json.dump(dic_sim_setting, outfile)
-        eng = cityflow.Engine("src/config_args2_val.json", thread_num=1)
+    # if dic_sim_setting['data_set_mode'] == 'train':
+    #     with open('src/config_args2.json', 'w') as outfile:
+    #         json.dump(dic_sim_setting, outfile)
+    #     eng = cityflow.Engine("src/config_args2.json", thread_num=1)
+    # if dic_sim_setting['data_set_mode'] == 'test':
+    #     with open('src/config_args2_test.json', 'w') as outfile:
+    #         json.dump(dic_sim_setting, outfile)
+    #     eng = cityflow.Engine("src/config_args2_test.json", thread_num=1)
+    # if dic_sim_setting['data_set_mode'] == 'val':
+    #     with open('src/config_args2_val.json', 'w') as outfile:
+    #         json.dump(dic_sim_setting, outfile)
+    #     eng = cityflow.Engine("src/config_args2_val.json", thread_num=1)
+
+    path = "src/config_{}_args2.json".format(dic_sim_setting['scenario'])
+    with open(path, 'w') as outfile:
+        json.dump(dic_sim_setting, outfile)
+    eng = cityflow.Engine(path, thread_num=1)
 
     # eng = cityflow.Engine("src/config_args2.json", thread_num=1)
 

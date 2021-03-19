@@ -18,7 +18,7 @@ def parse_arguments():
 
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--scenario", type=str, default="new_scenario")
+    parser.add_argument("--scenarios_train", nargs="+", default="[]")
     parser.add_argument("--scenario_test", type=str, default="new_scenario")
     parser.add_argument("--scenario_val", type=str, default="new_scenario")
     parser.add_argument("--exp_name", type=str, default="new_experiment")
@@ -90,12 +90,12 @@ def parse_roadnet(roadnet_file):
     return lane_phase_info_dict
 
 
-def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=0, waiting_added=0, distance_added=0, speed_added=0):
+def setup_config(scenario, mode, time=0, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=0, waiting_added=0, distance_added=0, speed_added=0):
     """Update the configuration file
 
     Params
     ======
-        data_set_mode (string): Use train or test dataset
+        data_set_mode (string): Use train/val/test dataset
         experiment_mode (string): Save as train or test experiment
         lr (float): Start learning rate
         batch_size (int): Batch size
@@ -109,19 +109,18 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
         config = json.load(json_file)
 
     config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "_rm_size=" + str(rm_size) + "_learn_every=" + str(learn_every) + "_smdp=" + str(smdp) +"_waiting_added=" +str(waiting_added) +"_distance_added=" +str(distance_added) +"_speed_added=" +str(speed_added)
-    if data_set_mode == 'train':
-        scenario = args.scenario
-    if data_set_mode == 'test':
-        scenario = args.scenario_test
-    if data_set_mode == 'val':
-        scenario = args.scenario_val
+    # if data_set_mode == 'train':
+    #     scenario = args.scenario
+    # if data_set_mode == 'test':
+    #     scenario = args.scenario_test
+    # if data_set_mode == 'val':
+    #     scenario = args.scenario_val
     config["flowFile"] = "data/1x1/{}/{}".format(scenario, config["flowFile"])
     config["roadnetFile"] = "data/1x1/{}".format(config["roadnetFile"])
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
     config['num_step'] = args.num_step
-    config['data_set_mode'] = data_set_mode
     config['scenario'] = scenario
-    config['mode'] = experiment_mode
+    config['mode'] = mode
     config['exp_name'] = args.exp_name
     config['norm_tau'] = 1e-3
     config['lr'] = lr
@@ -146,25 +145,26 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
             os.mkdir(path)
         except OSError:
             print("Creation of the directory %s failed" % path)
-    path = "{}/experiments/{}/{}".format(args.output_dir, config['exp_name'], config["mode"])
+    path = "{}/experiments/{}/{}".format(args.output_dir, config['exp_name'], config['hyperparams'])
+    path = path + "_time=" + str(time)
     if not os.path.exists(path):
         try:
             os.mkdir(path)
         except OSError:
             print("Creation of the directory %s failed" % path)
-    path = "{}/experiments/{}/{}/{}".format(args.output_dir, config['exp_name'], config["mode"], config['hyperparams'])
-    # if not os.path.exists(path):
-    #     try:
-    #         os.mkdir(path)
-    #     except OSError:
-    #         print("Creation of the directory %s failed" % path)
+    path = path + "/{}".format(config["mode"])
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
+    path = path + "/{}".format(scenario)
+    if not os.path.exists(path):
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" % path)
 
-    path = path + "_time=" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    if not os.path.exists(path):
-        try:
-            os.mkdir(path)
-        except OSError:
-            print("Creation of the directory %s failed" % path)
     config['path_save'] = path
     config["roadnetLogFile"] = "{}/{}".format(path, config["roadnetLogFile"])
     config["replayLogFile"] = "{}/{}".format(path, config["replayLogFile"])
@@ -189,17 +189,20 @@ def setup_config(data_set_mode, experiment_mode, lr=0, batch_size=0, rm_size=0, 
         except OSError:
             print("Creation of the directory %s failed" % path)
 
-    # write to file so the engine can open it.
+    # # write to file so the engine can open it.
+    # if config['data_set_mode'] == 'train':
+    #     with open('src/config_args.json', 'w') as outfile:
+    #         json.dump(config, outfile)
+    # if config['data_set_mode'] == 'test':
+    #     with open('src/config_args_test.json', 'w') as outfile:
+    #         json.dump(config, outfile)
+    # if config['data_set_mode'] == 'val':
+    #     with open('src/config_args_val.json', 'w') as outfile:
+    #         json.dump(config, outfile)
 
-    if config['data_set_mode'] == 'train':
-        with open('src/config_args.json', 'w') as outfile:
-            json.dump(config, outfile)
-    if config['data_set_mode'] == 'test':
-        with open('src/config_args_test.json', 'w') as outfile:
-            json.dump(config, outfile)
-    if config['data_set_mode'] == 'val':
-        with open('src/config_args_val.json', 'w') as outfile:
-            json.dump(config, outfile)
+    path = "src/config_{}_args.json".format(scenario)
+    with open(path, 'w') as outfile:
+        json.dump(config, outfile)
 
     return config
 

@@ -34,7 +34,6 @@ def run_sotl(config):
 
     scenario = config['scenario']
     # Parameter settings:
-    print(scenario)
     # if scenario == ""
     phi = 20
     theta = 200
@@ -96,7 +95,12 @@ def run_sotl(config):
         last_action = action
         t += 1
     env.log()
-    evaluate_one_traffic(config, args.scenario, 'sotl', 'print')
+
+    if config['mode'] == "sotl_train":
+        tt = evaluate_one_traffic(config)
+    else:
+        tt = evaluate_one_traffic(config, 'print')
+    return tt
 
 
 def choose_action(state, rho, phase_list, phase_startLane_mapping, phi, theta, mu):
