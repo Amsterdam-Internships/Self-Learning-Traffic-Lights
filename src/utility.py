@@ -33,6 +33,7 @@ def parse_arguments():
     parser.add_argument("--waiting_added", type=str)
     parser.add_argument("--distance_added", type=str)
     parser.add_argument("--speed_added", type=str)
+    parser.add_argument("--acyclic", type=int)
 
     return parser.parse_args()
 
@@ -131,6 +132,7 @@ def setup_config(scenario, mode, time=0, lr=0, batch_size=0, rm_size=0, learn_ev
     config['waiting_added'] = waiting_added
     config['distance_added'] = distance_added
     config['speed_added'] = speed_added
+    config['acyclic'] = args.acyclic
 
     # Make all paths in advance.
     path = "{}/experiments".format(args.output_dir)

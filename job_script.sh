@@ -35,7 +35,7 @@ cd Eigen/Eigen && pip install --user -e . && python $HOME/Eigen/Eigen/src/tuning
   --scenario_test "hangzhou_1x1_1h_A1"\
   --exp_name 13.0.hangzou3_state_2.0\
   --num_step 3600\
-  --trajectories 1500\
+  --trajectories 2000\
   --lrs "0.001"\
   --batchsizes "528"\
   --output_dir "$TMPDIR"\

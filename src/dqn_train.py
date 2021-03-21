@@ -51,7 +51,10 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
 
     intersection_id = list(config_val['lane_phase_info'].keys())[0]
     phase_list = config_val['lane_phase_info'][intersection_id]['phase']
-    action_size = len(phase_list)
+    if config['acyclic']:
+        action_size = len(phase_list)
+    else:
+        action_size = 2
     state_size = len(env_val.reset())
     best_travel_time_train = np.ones(len(args.scenarios_train)) * 1000000
     best_travel_time_val = 100000
@@ -85,7 +88,7 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
         # Decrease learning rate.
         # agent.lr_scheduler.step()
         # lr = agent.lr_scheduler.get_last_lr()[0]
-        lr = config['lr']
+        # lr = config['lr']
 
         # Save and show training stats.
         stats_every = 50
@@ -208,7 +211,10 @@ def run_env_smdp(agent, eps, config, env, mode=None):
 
     t = 0
     state = env.reset()
-    last_action, _ = agent.act(state, eps)
+    if config['acyclic']:
+        last_action, _ = agent.act(state, eps)
+    else:
+        last_action = 0
 
     while t < config['num_step']:
         action, _ = agent.act(state, eps)
@@ -245,7 +251,10 @@ def run_env_smdp(agent, eps, config, env, mode=None):
             stats['rewards'] += reward
 
         state = next_state
-        last_action = action
+        if config['acyclic']:
+            last_action = action
+        else:
+            last_action = 0
         t += 1
 
     stats['travel_time'] = env.get_average_travel_time()

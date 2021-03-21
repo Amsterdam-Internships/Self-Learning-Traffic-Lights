@@ -33,11 +33,13 @@ class CityFlowEnv:
         self.end_lane = self.lane_phase_info[self.intersection_id]['end_lane']
         self.phase_list = self.lane_phase_info[self.intersection_id]["phase"]
         self.phase_startLane_mapping = self.lane_phase_info[self.intersection_id]["phase_startLane_mapping"]
-        self.current_phase = self.phase_list[0]  # (I think) from -1 to len(phase_list)-1
+        self.current_phase = 0  # from -1 to len(phase_list)-1
         self.current_phase_time = 0
         self.last_phase = 0
         self.yellow_time = 5
         self.phase_log = []
+
+        self.acyclic = config['acyclic']
 
         self.WAITING = config['waiting_added']
         self.DISTANCE = config['distance_added']
@@ -61,41 +63,58 @@ class CityFlowEnv:
         return self.get_state()
 
     def step(self, next_phase):
-        if self.current_phase == next_phase:
-            self.current_phase_time += 1
-        else:
-            self.current_phase = next_phase
-            self.current_phase_time = 1
-        self.eng.set_tl_phase(self.intersection_id, self.current_phase + 1)  # +1 to make yellow light action 0.
-        self.phase_log.append(self.current_phase + 1)
-        self.eng.next_step()
-
-        # Environment gives back the next_state and reward.
-        return self.get_state(), self.get_reward()
-
-    # Only works with TIM method
-    def step_cyclic(self, switch):
-        if switch is not -1:
-            if switch == 0:
+        if self.acyclic:
+            if self.current_phase == next_phase:
                 self.current_phase_time += 1
-            if switch == 1:
-                if self.current_phase == len(self.phase_list) - 1:
-                    self.current_phase = 0
-                else:
-                    self.current_phase = self.current_phase + 1
+            else:
+                self.current_phase = next_phase
+                self.current_phase_time = 1
 
             self.eng.set_tl_phase(self.intersection_id, self.current_phase + 1)  # +1 to make yellow light action 0.
             self.phase_log.append(self.current_phase + 1)
-
-        # Set yellow light.
         else:
-            self.eng.set_tl_phase(self.intersection_id, 0)
-            self.phase_log.append(0)
+            if next_phase is not -1:
+                if next_phase == 0:
+                    self.current_phase_time += 1
+                if next_phase == 1:
+                    self.current_phase = (self.current_phase + 1) % len(self.phase_list)
+
+                self.eng.set_tl_phase(self.intersection_id, self.current_phase + 1)  # +1 to make yellow light action 0.
+                self.phase_log.append(self.current_phase + 1)
+
+            # Set yellow light.
+            else:
+                self.eng.set_tl_phase(self.intersection_id, 0)
+                self.phase_log.append(0)
 
         self.eng.next_step()
 
         # Environment gives back the next_state and reward.
         return self.get_state(), self.get_reward()
+
+    # # Only works with TIM method
+    # def step_cyclic(self, switch):
+    #     if switch is not -1:
+    #         if switch == 0:
+    #             self.current_phase_time += 1
+    #         if switch == 1:
+    #             if self.current_phase == len(self.phase_list) - 1:
+    #                 self.current_phase = 0
+    #             else:
+    #                 self.current_phase = self.current_phase + 1
+    #
+    #         self.eng.set_tl_phase(self.intersection_id, self.current_phase + 1)  # +1 to make yellow light action 0.
+    #         self.phase_log.append(self.current_phase + 1)
+    #
+    #     # Set yellow light.
+    #     else:
+    #         self.eng.set_tl_phase(self.intersection_id, 0)
+    #         self.phase_log.append(0)
+    #
+    #     self.eng.next_step()
+    #
+    #     # Environment gives back the next_state and reward.
+    #     return self.get_state(), self.get_reward()
 
     def get_state(self):
 

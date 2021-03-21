@@ -19,7 +19,7 @@ Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 GAMMA = 0.99  # discount factor
 TAU = 1e-3  # for soft update of target parameters
 LR_decay = 0.999  # learning rate decay
-LR_STEP_TIMES = 800  # how often learning rate decays
+LR_STEP_TIMES = 500  # how often learning rate decays
 FREEZE_TARGET = 10000  # how often to replace the target network
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -49,7 +49,7 @@ class Agent:
 
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=lr)
         # self.optimizer = optim.SGD(self.qnetwork_local.parameters(), lr=LR, momentum=0.9)
-        # self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=LR_STEP_TIMES, gamma=0.5)
+        # self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=LR_STEP_TIMES, gamma=0.3)
 
         self.memory = ReplayBuffer(action_size, rm_size, batch_size)
 

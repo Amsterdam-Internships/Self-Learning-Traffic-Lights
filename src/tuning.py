@@ -16,7 +16,7 @@ This file contains the hyper-parameter loop.
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Running on device: ", device)
-print('version 1.0.8 multiple train')  # To check if the right version is installed.
+print('version 1.1.0 Lisa longer run')  # To check if the right version is installed.
 args = parse_arguments()
 
 TRAIN = 1  # Boolean to train or not
@@ -72,17 +72,17 @@ def main():
     # TODO this should be part of another 'compare' file, in which perhaps the agent is reloaded with the saved network.
     # Compare the Deep Reinforcement Learning agent with baseline methods.
 
-    travel_times_training_set_sotl = []
-    for i, scenario in enumerate(args.scenarios_train):
-        config_train = setup_config(scenario, 'sotl_train')
-        travel_times_training_set_sotl.append(run_sotl(config_train))
-    print("")
-    print("====================== travel time ======================")
-    print('sotl_train: average over multiple train sets: ' + ": {:.2f} s".format(np.mean(travel_times_training_set_sotl)))
-    config_val = setup_config(args.scenario_val, 'sotl_val')
-    run_sotl(config_val)
-    config_test = setup_config(args.scenario_test, 'sotl_test')
-    run_sotl(config_test)
+    # travel_times_training_set_sotl = []
+    # for i, scenario in enumerate(args.scenarios_train):
+    #     config_train = setup_config(scenario, 'sotl_train')
+    #     travel_times_training_set_sotl.append(run_sotl(config_train))
+    # print("")
+    # print("====================== travel time ======================")
+    # print('sotl_train: average over multiple train sets: ' + ": {:.2f} s".format(np.mean(travel_times_training_set_sotl)))
+    # config_val = setup_config(args.scenario_val, 'sotl_val')
+    # run_sotl(config_val)
+    # config_test = setup_config(args.scenario_test, 'sotl_test')
+    # run_sotl(config_test)
     # run_sotl_LIT()
     # random_run()
 
