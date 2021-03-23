@@ -21,16 +21,7 @@ mkdir "$TMPDIR"/experiments
 
 # execute training script
 cd Eigen/Eigen && pip install --user -e . && python $HOME/Eigen/Eigen/src/tuning.py\
-  --scenarios_train\
-  "hangzhou_1x1_1h_A3"\
-  "hangzhou_1x1_1h_B1"\
-  "hangzhou_1x1_1h_B2"\
-  "hangzhou_1x1_1h_C1"\
-  "hangzhou_1x1_1h_C2"\
-  "hangzhou_1x1_1h_D1"\
-  "hangzhou_1x1_1h_D2"\
-  "hangzhou_1x1_1h_E1"\
-  "hangzhou_1x1_1h_E2"\
+  --scenarios_train "hangzhou_1x1_1h_A3"\
   --scenario_val "hangzhou_1x1_1h_A2"\
   --scenario_test "hangzhou_1x1_1h_A1"\
   --exp_name 13.0.hangzou3_state_2.0_multi_train\

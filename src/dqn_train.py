@@ -107,7 +107,7 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
 
                 # Save logs of best run on this training scenario.
                 if stats_one_training_run['travel_time'] < best_travel_time_train[i]:
-                    print('BEST TRAIN on {}'.format(i))
+                    print('BEST TRAIN on {}, {} s'.format(i, stats_one_training_run['travel_time']))
                     envs_train[i].log()
                     best_travel_time_train[i] = stats_one_training_run['travel_time']
 

@@ -33,7 +33,7 @@ def parse_arguments():
     parser.add_argument("--waiting_added", type=str)
     parser.add_argument("--distance_added", type=str)
     parser.add_argument("--speed_added", type=str)
-    parser.add_argument("--acyclic", type=int)
+    parser.add_argument("--acyclic", type=int, default="1")
 
     return parser.parse_args()
 
@@ -109,7 +109,10 @@ def setup_config(scenario, mode, time=0, lr=0, batch_size=0, rm_size=0, learn_ev
     with open('src/config.json') as json_file:
         config = json.load(json_file)
 
-    config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "_rm_size=" + str(rm_size) + "_learn_every=" + str(learn_every) + "_smdp=" + str(smdp) +"_waiting_added=" +str(waiting_added) +"_distance_added=" +str(distance_added) +"_speed_added=" +str(speed_added)
+    config['hyperparams'] = "lr=" + str(lr) + "_batch_size=" + str(batch_size) + "_rm_size=" + str(rm_size) + \
+                            "_learn_every=" + str(learn_every) + "_smdp=" + str(smdp) + "_waiting_added="\
+                            + str(waiting_added) + "_distance_added=" + str(distance_added) + "_speed_added=" \
+                            + str(speed_added) + "acyclic=" + str(args.acyclic)
     # if data_set_mode == 'train':
     #     scenario = args.scenario
     # if data_set_mode == 'test':
