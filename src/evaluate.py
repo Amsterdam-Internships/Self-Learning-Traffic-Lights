@@ -27,9 +27,6 @@ def evaluate_one_traffic(config, printing='no_printing'):
     out_file = config['path_save'] + '/evaluation.txt'
     out_file2 = config['path_save'] + '/travel_time_data.json'
 
-    # plan_file = "{}/experiments/{}/{}/{}/signal_plan_template.txt".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
-    # out_file = "{}/experiments/{}/{}/{}/evaluation.txt".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
-    # out_file2 = "{}/experiments/{}/{}/{}/travel_time_data.json".format(args.output_dir, args.exp_name, config['mode'], config['hyperparams'])
     tt = 0
     if check(plan_file, config["num_step"]):
         tt, actions, tt_list = cal_travel_time(config, plan_file)

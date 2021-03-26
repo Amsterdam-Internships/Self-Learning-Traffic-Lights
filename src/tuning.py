@@ -8,7 +8,8 @@ from src.dqn_train import *
 from src.utility import *
 from src.evaluate import *
 from src.sotl_run import run_sotl
-# from src.sotl_LIT import run_sotl_LIT
+from src.cut_off import run_cut_off
+from src.fixed_time import run_fixed_time
 
 """
 This file contains the hyper-parameter loop.
@@ -16,7 +17,7 @@ This file contains the hyper-parameter loop.
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Running on device: ", device)
-print('version 1.1.1 Lisa cyclic with multi')  # To check if the right version is installed.
+print('version 1.1.2 fixed baselines')  # To check if the right version is installed.
 args = parse_arguments()
 
 TRAIN = 1  # Boolean to train or not
@@ -75,16 +76,23 @@ def main():
     # travel_times_training_set_sotl = []
     # for i, scenario in enumerate(args.scenarios_train):
     #     config_train = setup_config(scenario, 'sotl_train')
-    #     travel_times_training_set_sotl.append(run_sotl(config_train))
+    #     travel_times_training_set_sotl.append(run_sotl(config_train, scenario))
     # print("")
     # print("====================== travel time ======================")
     # print('sotl_train: average over multiple train sets: ' + ": {:.2f} s".format(np.mean(travel_times_training_set_sotl)))
+
     # config_val = setup_config(args.scenario_val, 'sotl_val')
-    # run_sotl(config_val)
-    # config_test = setup_config(args.scenario_test, 'sotl_test')
-    # run_sotl(config_test)
-    # run_sotl_LIT()
-    # random_run()
+    # run_sotl(config_val, args.scenario_val)
+    #
+    config_test = setup_config(args.scenario_test, 'sotl_test')
+    run_sotl(config_test, args.scenarios_train[8])
+
+    config_random = setup_config(args.scenario_test, 'random', distance_added=args.distance_added,
+                                 waiting_added=args.waiting_added, smdp=args.smdp)
+    random_run(config_random)
+    # config_fixed = setup_config(args.scenario_test, 'fixed_time', time=0, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=0, waiting_added=0,
+    #              distance_added=0, speed_added=0)
+    # run_fixed_time(config_fixed)
 
     # Show travel time per simulation second.
     # travel_time_plot()

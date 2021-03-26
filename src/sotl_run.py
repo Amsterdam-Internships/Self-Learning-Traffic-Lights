@@ -17,7 +17,7 @@ Self-organizing traffic lights: A realistic simulation (Cools, S et al., 2013)
 args = parse_arguments()
 
 
-def run_sotl(config):
+def run_sotl(config, scenario_parameters):
     """ SOTL
     """
     env = CityFlowEnv(config)
@@ -32,12 +32,55 @@ def run_sotl(config):
     intersection_id = list(lane_phase_info.keys())[0]
     start_lane = lane_phase_info[intersection_id]['start_lane']
 
-    scenario = config['scenario']
     # Parameter settings:
-    # if scenario == ""
-    phi = 20
-    theta = 200
-    mu = 20
+    if scenario_parameters == "hangzhou_1x1_1h_A1":
+        phi = 14
+        theta = 200
+        mu = 20
+    elif scenario_parameters == "hangzhou_1x1_1h_A2":
+        phi = 21
+        theta = 200
+        mu = 100
+    elif scenario_parameters == "hangzhou_1x1_1h_A3":
+        phi = 16
+        theta = 200
+        mu = 20
+    elif scenario_parameters == "hangzhou_1x1_1h_B1":
+        phi = 10
+        theta = 200
+        mu = 20
+    elif scenario_parameters == "hangzhou_1x1_1h_B2":
+        phi = 10
+        theta = 200
+        mu = 20
+    elif scenario_parameters == "hangzhou_1x1_1h_C1":
+        phi = 10
+        theta = 200
+        mu = 20
+    elif scenario_parameters == "hangzhou_1x1_1h_C2":
+        phi = 10
+        theta = 200
+        mu = 20
+    elif scenario_parameters == "hangzhou_1x1_1h_D1":
+        phi = 16
+        theta = 200
+        mu = 20
+    elif scenario_parameters == "hangzhou_1x1_1h_D2":
+        phi = 16
+        theta = 200
+        mu = 20
+    elif scenario_parameters == "hangzhou_1x1_1h_E1":
+        phi = 21
+        theta = 200
+        mu = 20
+    elif scenario_parameters == "hangzhou_1x1_1h_E2":
+        phi = 19
+        theta = 200
+        mu = 20
+    else:
+        phi = 20
+        theta = 200
+        mu = 20
 
     t = 0
     env.reset()

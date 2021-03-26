@@ -91,7 +91,8 @@ def parse_roadnet(roadnet_file):
     return lane_phase_info_dict
 
 
-def setup_config(scenario, mode, time=0, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=0, waiting_added=0, distance_added=0, speed_added=0):
+def setup_config(scenario, mode, time=0, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=0, waiting_added=0,
+                 distance_added=0, speed_added=0):
     """Update the configuration file
 
     Params
@@ -236,24 +237,25 @@ def travel_time_plot():
     batch_size = 128
 
     mode = 'train'
-    config = setup_config('train', mode, lr, batch_size, norm_inputs=0, norm_rewards=0)
-    filename = "experiments/{}/{}/{}/travel_time_data.json".format(args.exp_name, mode, config['hyperparams'])
-    tt_data_rl = load_pickle(filename)
+    config = setup_config(args.scenario_test, mode, lr, batch_size)
+    path = config['path_save'] + "/travel_time_data.json"
+    tt_data_rl = load_pickle(path)
 
-    mode = 'sotl'
-    config = setup_config('train', mode)
-    filename = "experiments/{}/{}/{}/travel_time_data.json".format(args.exp_name, mode, config['hyperparams'])
-    tt_data_sotl = load_pickle(filename)
+    mode = 'sotl_test'
+    config = setup_config(args.scenario_test, mode)
+    path = config['path_save'] + "/travel_time_data.json"
+    print(path)
+    tt_data_sotl = load_pickle(path)
 
-    mode = 'sotl_lit'
-    config = setup_config('train', mode)
-    filename = "experiments/{}/{}/{}/travel_time_data.json".format(args.exp_name, mode, config['hyperparams'])
-    tt_data_sotl_LIT = load_pickle(filename)
+    mode = 'fixed_time'
+    config = setup_config(args.scenario_test, mode)
+    path = config['path_save'] + "/travel_time_data.json"
+    tt_data_sotl_LIT = load_pickle(path)
 
     mode = 'random'
-    config = setup_config('train', mode)
-    filename = "experiments/{}/{}/{}/travel_time_data.json".format(args.exp_name, mode, config['hyperparams'])
-    tt_data_random = load_pickle(filename)
+    config = setup_config(args.scenario_test, mode)
+    path = config['path_save'] + "/travel_time_data.json"
+    tt_data_random = load_pickle(path)
 
     time_to_plot = 300
 
@@ -264,7 +266,7 @@ def travel_time_plot():
 
     plt.ylabel('Average Travel Time')
     plt.xlabel('Simulation Seconds')
-    plt.legend((line0, line1, line2, line3), ('Random', 'SOTL-LIT', 'SOTL', 'DRL'))
+    plt.legend((line0, line1, line2, line3), ('Random', 'Fixed', 'SOTL', 'DRL'))
     plt.savefig("experiments/{}/travel_time_plot.png".format(args.exp_name))
 
 

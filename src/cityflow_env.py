@@ -62,6 +62,10 @@ class CityFlowEnv:
         self.phase_log = []
         return self.get_state()
 
+    # def next_step(self):
+    #     self.phase_log.append(0)
+    #     self.eng.next_step()
+
     def step(self, next_phase):
         if self.acyclic:
             if self.current_phase == next_phase:
