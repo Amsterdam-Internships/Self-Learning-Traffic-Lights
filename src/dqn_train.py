@@ -23,7 +23,7 @@ EPS_START = 1
 EPS_END = 0.1
 EPS_END_PERCENTAGE = 0.1
 GAMMA = 0.99  # discount factor (Should be same as in agent file)
-STATS_EVERY = 1
+STATS_EVERY = 50
 
 args = parse_arguments()
 
@@ -334,7 +334,7 @@ def eval_fixed_states(agent, eps, config):
                          [1, 9, 2, 24, 0, 9, 0, 5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                          [0, 9, 0, 17, 0, 2, 1, 5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
 
-    if config['num_step'] == 3600 and config['smdp'] == 1 and config['speed_added'] == 0:
+    if config['num_step'] == 3600 and config['smdp'] == 1 and config['speed_added'] == 0 and config['acyclic'] == 1:
         if config['waiting_added'] == 0:
             random_states = [[2, 37, 1, 34, 2, 34, 0, 37, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
                              [0, 36, 0, 34, 2, 36, 0, 38, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
