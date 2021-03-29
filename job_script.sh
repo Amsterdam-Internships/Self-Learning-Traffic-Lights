@@ -35,17 +35,17 @@ cd Eigen/Eigen && pip install --user -e . && python $HOME/Eigen/Eigen/src/tuning
   --scenario_test "hangzhou_1x1_1h_B2"\
   --exp_name 14.0.hangzou_generale\
   --num_step 3600\
-  --trajectories 4000\
+  --trajectories 2500\
   --lrs "0.001"\
   --batchsizes "528"\
   --output_dir "$TMPDIR"\
   --rm_size "360000"\
   --learn_every "4"\
-  --smdp 1\
-  --waiting_added "0"\
-  --distance_added "0"\
+  --smdp 0\
+  --waiting_added "1"\
+  --distance_added "1"\
   --speed_added "0"\
-  --acyclic "0"\
+  --acyclic "1"\
 
 # copy checkpoints to home directory
 mkdir -p $HOME/lisa_output
