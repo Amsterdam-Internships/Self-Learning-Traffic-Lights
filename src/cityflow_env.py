@@ -45,14 +45,14 @@ class CityFlowEnv:
         self.DISTANCE = config['distance_added']
         self.SPEED = config['speed_added']
 
-        # self.ALL_VEHICLES_MAX = 1
-        # self.WAITING_MAX = 1
-        # # self.MAX_DISTANCE = 1
-        # self.MAX_SPEED = 1
         self.ALL_VEHICLES_MAX = 40
         self.WAITING_MAX = 30
         self.MAX_DISTANCE = 300
         self.MAX_SPEED = 11
+
+        self.last_reward = 0
+        self.SHAPING_REWARD = 0
+        self.TEMPORAL_REWARD = 0
 
         self.state_normalizer = Normalizer(len(config['lane_phase_info'][self.intersection_id]['start_lane']), config['norm_tau'])
         self.reward_normalizer = Normalizer(1, config['norm_tau'])
@@ -227,7 +227,16 @@ class CityFlowEnv:
         # if self.config['normalize_rewards'] == 1:
         #     self.reward_normalizer.observe(np.array([reward]))
         #     reward = self.reward_normalizer.normalize(np.array([reward]))[0]
-        return reward
+        if self.TEMPORAL_REWARD == 1:
+            temp_reward = reward - self.last_reward
+            self.last_reward = reward
+            return temp_reward
+        elif self.SHAPING_REWARD == 1:
+            shape_reward = reward + self.last_reward
+            self.last_reward = reward
+            return shape_reward
+        else:
+            return reward
 
     def get_average_travel_time(self):
         return self.eng.get_average_travel_time()
