@@ -53,6 +53,7 @@ class CityFlowEnv:
         self.last_reward = 0
         self.SHAPING_REWARD = 0
         self.TEMPORAL_REWARD = 0
+        self.ADDED_REWARD = 0
 
         self.state_normalizer = Normalizer(len(config['lane_phase_info'][self.intersection_id]['start_lane']), config['norm_tau'])
         self.reward_normalizer = Normalizer(1, config['norm_tau'])
@@ -235,6 +236,10 @@ class CityFlowEnv:
             shape_reward = reward + self.last_reward
             self.last_reward = reward
             return shape_reward
+        elif self.ADDED_REWARD == 1:
+            temp_reward = reward - self.last_reward
+            self.last_reward = reward
+            return reward + temp_reward
         else:
             return reward
 

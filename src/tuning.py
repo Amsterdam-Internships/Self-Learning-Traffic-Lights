@@ -17,7 +17,7 @@ This file contains the hyper-parameter loop.
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Running on device: ", device)
-print('version 1.1.4 sanity reward to Lisa')  # To check if the right version is installed.
+print('version 1.1.5 deeper NN test to Lisa')  # To check if the right version is installed.
 args = parse_arguments()
 
 TRAIN = 1  # Boolean to train or not
