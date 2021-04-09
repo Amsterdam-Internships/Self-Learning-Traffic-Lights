@@ -1,7 +1,7 @@
 #!/bin/bash
 #Set job requirements
 #SBATCH -N 1
-#SBATCH -t 99:00:00
+#SBATCH -t 50:00:00
 #SBATCH -p gpu_shared
 
 #SBATCH --mail-type=END
