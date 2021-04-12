@@ -17,13 +17,13 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-TENSORBOARD = 1
+TENSORBOARD = 0
 LOAD = 0  # Set to 1 to load checkpoint
 EPS_START = 1
 EPS_END = 0.1
 EPS_END_PERCENTAGE = 0.1
 GAMMA = 0.99  # discount factor (Should be same as in agent file)
-STATS_EVERY = 50
+STATS_EVERY = 1
 
 args = parse_arguments()
 
@@ -210,12 +210,16 @@ def run_env_smdp(agent, eps, config, env, mode=None):
 
     t = 0
     state = env.reset()
+
+    # lijsten van 4
     if config['acyclic']:
         last_action, _ = agent.act(state, eps)
     else:
         last_action = 0
 
     while t < config['num_step']:
+        # for lloop
+        #lijst van 4
         action, _ = agent.act(state, eps)
 
         # Take step in environment, add yellow light if action changes.

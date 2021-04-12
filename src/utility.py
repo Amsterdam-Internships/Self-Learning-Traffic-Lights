@@ -34,6 +34,7 @@ def parse_arguments():
     parser.add_argument("--distance_added", type=str)
     parser.add_argument("--speed_added", type=str)
     parser.add_argument("--acyclic", type=int, default="1")
+    parser.add_argument("--multi_agent", type=int, default="0")
 
     return parser.parse_args()
 
@@ -120,8 +121,12 @@ def setup_config(scenario, mode, time=0, lr=0, batch_size=0, rm_size=0, learn_ev
     #     scenario = args.scenario_test
     # if data_set_mode == 'val':
     #     scenario = args.scenario_val
-    config["flowFile"] = "data/1x1/{}/{}".format(scenario, config["flowFile"])
-    config["roadnetFile"] = "data/1x1/{}".format(config["roadnetFile"])
+    if args.multi_agent:
+        config["flowFile"] = "data/multi_agent/{}/{}".format(scenario, config["flowFile"])
+        config["roadnetFile"] = "data/multi_agent/{}/{}".format(scenario, config["roadnetFile"])
+    else:
+        config["flowFile"] = "data/1x1/{}/{}".format(scenario, config["flowFile"])
+        config["roadnetFile"] = "data/1x1/{}".format(config["roadnetFile"])
     config['lane_phase_info'] = parse_roadnet(config["roadnetFile"])
     config['num_step'] = args.num_step
     config['scenario'] = scenario

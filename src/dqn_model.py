@@ -32,7 +32,7 @@ class QNetwork(nn.Module):
         # self.fc3 = weight_norm(nn.Linear(fc2_unit, action_size), name='weight')
         self.fc1 = nn.Linear(state_size, fc1_unit)
         self.fc2 = nn.Linear(fc1_unit, fc2_unit)
-        self.fc25 = nn.Linear(fc1_unit, fc2_unit)
+        # self.fc25 = nn.Linear(fc1_unit, fc2_unit)
         self.fc3 = nn.Linear(fc2_unit, action_size)
 
     def forward(self, x):
@@ -41,5 +41,5 @@ class QNetwork(nn.Module):
         """
         x = f.relu(self.fc1(x))
         x = f.relu(self.fc2(x))
-        x = f.relu(self.fc25(x))
+        # x = f.relu(self.fc25(x))
         return self.fc3(x)
