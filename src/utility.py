@@ -143,6 +143,15 @@ def setup_config(scenario, mode, time=0, lr=0, batch_size=0, rm_size=0, learn_ev
     config['speed_added'] = speed_added
     config['acyclic'] = args.acyclic
 
+    if config['scenario'] == "LA_1x4":
+        config['intersection_indices'] = [0, 8, 11, 17]
+    else:
+        config['intersection_indices'] = [0]
+
+    # if mode == 'fixed_time':
+        # config["rlTrafficLight"] = False
+        # config["saveReplay"] = True
+
     # Make all paths in advance.
     path = "{}/experiments".format(args.output_dir)
     if not os.path.exists(path):

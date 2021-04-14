@@ -17,7 +17,7 @@ This file contains the hyper-parameter loop.
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Running on device: ", device)
-print('version 2.0.0 MA test (only change in config, so should still work for single agent, backup')  # To check if the right version is installed.
+print('version 2.0.0 MA test')  # To check if the right version is installed.
 args = parse_arguments()
 
 TRAIN = 0  # Boolean to train or not

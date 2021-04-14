@@ -23,31 +23,23 @@ def main():
 
 def evaluate_one_traffic(config, printing='no_printing'):
     args = parse_arguments()
-    plan_file = config['path_save'] + '/signal_plan_template.txt'
+
+    # Plan files should be named after signal_plan_template + the intersection_index.
+    plan_files = [[] for i in config['intersection_indices']]
+    for i, intersection_index in enumerate(config['intersection_indices']):
+        plan_files[i] = config['path_save'] + '/signal_plan_template' + str(intersection_index) + '.txt'
     out_file = config['path_save'] + '/evaluation.txt'
-    out_file2 = config['path_save'] + '/travel_time_data.json'
+    out_file2= config['path_save'] + '/travel_time_data.json'
 
     tt = 0
-    if check(plan_file, config["num_step"]):
-        tt, actions, tt_list = cal_travel_time(config, plan_file)
+    if check(plan_files[0], config["num_step"]):  # Checks only the first file.
+        tt, tt_list = cal_travel_time(config, plan_files)
         if printing == 'print':
             print("")
             print("====================== travel time ======================")
             print(config['mode'] + ": scenario_{0}: {1:.2f} s".format(config['scenario'], tt))
 
-            # change to baseline of fixed or sotl later. if score is > 0 you approved by that margin,
-            # if score is <0 you got worse.
-            # b = 58.88  # SOTL tt for 6.0.real_1x1_straight
-            # b = 77.89  # SOTL average travel time for 1x1
-            # b = 89.66  # SOTL tt 7.0.real_1x1_turns
-            # score = (b - tt)/b
-            #
-            # print("====================== score ======================")
-            # print("scenario_{0}: {1}".format(scenario, score))
-            # print("====================== score ======================")
-
             with open(out_file, "w") as f:
-                f.write(str(list(actions.values())) + '\n')
                 f.write(str(tt))
 
             save_pickle(tt_list, out_file2)
@@ -57,47 +49,29 @@ def evaluate_one_traffic(config, printing='no_printing'):
     return tt
 
 
-def cal_travel_time(dic_sim_setting, plan_file):
+def cal_travel_time(dic_sim_setting, plan_files):
     dic_sim_setting['saveReplay'] = True
-
-    # Write to file so the engine can open it.
-    # with open('src/config_args2.json', 'w') as outfile:
-    #     json.dump(dic_sim_setting, outfile)
-
-    # if dic_sim_setting['data_set_mode'] == 'train':
-    #     with open('src/config_args2.json', 'w') as outfile:
-    #         json.dump(dic_sim_setting, outfile)
-    #     eng = cityflow.Engine("src/config_args2.json", thread_num=1)
-    # if dic_sim_setting['data_set_mode'] == 'test':
-    #     with open('src/config_args2_test.json', 'w') as outfile:
-    #         json.dump(dic_sim_setting, outfile)
-    #     eng = cityflow.Engine("src/config_args2_test.json", thread_num=1)
-    # if dic_sim_setting['data_set_mode'] == 'val':
-    #     with open('src/config_args2_val.json', 'w') as outfile:
-    #         json.dump(dic_sim_setting, outfile)
-    #     eng = cityflow.Engine("src/config_args2_val.json", thread_num=1)
 
     path = "src/config_{}_args2.json".format(dic_sim_setting['scenario'])
     with open(path, 'w') as outfile:
         json.dump(dic_sim_setting, outfile)
     eng = cityflow.Engine(path, thread_num=1)
 
-    # eng = cityflow.Engine("src/config_args2.json", thread_num=1)
+    plans = [[] for plan in plan_files]
+    intersection_ids = [0 for plan in plan_files]
+    for i in range(len(plan_files)):
+        plans[i] = pd.read_csv(plan_files[i], sep="\t", header=0, dtype=int)
+        intersection_ids[i] = plans[i].columns[0]
 
-    plan = pd.read_csv(plan_file, sep="\t", header=0, dtype=int)
-    intersection_id = plan.columns[0]
-
-    actions = {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0}
     tt_list = []
-
     for step in range(dic_sim_setting["num_step"]):
-        phase = int(plan.loc[step])
-        actions[phase-1] += 1
-        tt_list.append(eng.get_average_travel_time())
-        eng.set_tl_phase(intersection_id, phase)
+        for i in range(len(plans)):
+            phase = int(plans[i].loc[step])
+            eng.set_tl_phase(intersection_ids[i], phase)
         eng.next_step()
+        tt_list.append(eng.get_average_travel_time())
 
-    return eng.get_average_travel_time(), actions, tt_list
+    return eng.get_average_travel_time(), tt_list
 
 
 def check(plan_file, num_step):
@@ -112,11 +86,11 @@ def check(plan_file, num_step):
         return flag
 
     intersection_id = plan.columns[0]
-    if intersection_id != 'intersection_1_1':
-        flag = False
-        error_info = 'The header intersection_id is wrong (for example: intersection_1_1)!'
-        print(error_info)
-        return flag
+    # if intersection_id != 'intersection_1_1':
+    #     flag = False
+    #     error_info = 'The header intersection_id is wrong (for example: intersection_1_1)!'
+    #     print(error_info)
+    #     return flag
 
     phases = plan.values
     current_phase = phases[0][0]
