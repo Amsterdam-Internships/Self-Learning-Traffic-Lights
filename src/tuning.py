@@ -20,7 +20,7 @@ print("Running on device: ", device)
 print('version 2.0.0 MA test (only change in config, so should still work for single agent, backup')  # To check if the right version is installed.
 args = parse_arguments()
 
-TRAIN = 0  # Boolean to train or not
+TRAIN = 1  # Boolean to train or not
 
 TRAJECTORIES = args.trajectories
 
@@ -87,9 +87,9 @@ def main():
     # config_test = setup_config(args.scenario_test, 'sotl_test')
     # run_sotl(config_test, args.scenarios_train[8])
 
-    config_fixed = setup_config(args.scenario_test, 'fixed_time', time=0, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=0, waiting_added=0,
-                 distance_added=0, speed_added=0)
-    run_fixed_time(config_fixed)
+    # config_fixed = setup_config(args.scenario_test, 'fixed_time', time=0, lr=0, batch_size=0, rm_size=0, learn_every=0, smdp=0, waiting_added=0,
+    #              distance_added=0, speed_added=0)
+    # run_fixed_time(config_fixed)
 
     # config_random = setup_config(args.scenario_test, 'random', distance_added=args.distance_added,
     #                              waiting_added=args.waiting_added, smdp=args.smdp)

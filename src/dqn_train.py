@@ -17,13 +17,13 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-TENSORBOARD = 0
+TENSORBOARD = 1
 LOAD = 0  # Set to 1 to load checkpoint
 EPS_START = 1
 EPS_END = 0.1
 EPS_END_PERCENTAGE = 0.1
 GAMMA = 0.99  # discount factor (Should be same as in agent file)
-STATS_EVERY = 1
+STATS_EVERY = 50
 
 args = parse_arguments()
 
