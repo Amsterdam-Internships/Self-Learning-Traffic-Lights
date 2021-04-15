@@ -32,14 +32,14 @@ class CityFlowEnv:
         self.current_phases = [0 for intersection in range(len(self.intersection_ids))]  # from -1 to len(phase_list)-1
         self.current_phase_times = [0 for intersection in range(len(self.intersection_ids))]
 
-        self.intersection_id = list(self.lane_phase_info.keys())[0]
-        self.start_lane = self.lane_phase_info[self.intersection_id]['start_lane']
-        self.end_lane = self.lane_phase_info[self.intersection_id]['end_lane']
-        self.phase_list = self.lane_phase_info[self.intersection_id]["phase"]
-        self.phase_startLane_mapping = self.lane_phase_info[self.intersection_id]["phase_startLane_mapping"]
-        self.current_phase = 0  # from -1 to len(phase_list)-1
-        self.current_phase_time = 0
-        self.phase_log = []
+        # self.intersection_id = list(self.lane_phase_info.keys())[0]
+        # self.start_lane = self.lane_phase_info[self.intersection_id]['start_lane']
+        # self.end_lane = self.lane_phase_info[self.intersection_id]['end_lane']
+        # self.phase_list = self.lane_phase_info[self.intersection_id]["phase"]
+        # self.phase_startLane_mapping = self.lane_phase_info[self.intersection_id]["phase_startLane_mapping"]
+        # self.current_phase = 0  # from -1 to len(phase_list)-1
+        # self.current_phase_time = 0
+        # self.phase_log = []
 
         self.last_phase = 0
         self.yellow_time = 5
@@ -61,13 +61,13 @@ class CityFlowEnv:
         self.TEMPORAL_REWARD = 0
         self.ADDED_REWARD = 0
 
-        self.state_normalizer = Normalizer(len(config['lane_phase_info'][self.intersection_id]['start_lane']), config['norm_tau'])
-        self.reward_normalizer = Normalizer(1, config['norm_tau'])
+        # self.state_normalizer = Normalizer(len(config['lane_phase_info'][self.intersection_id]['start_lane']), config['norm_tau'])
+        # self.reward_normalizer = Normalizer(1, config['norm_tau'])
 
     def reset(self):
         self.eng.reset()
-        self.phase_log = [[] for phase in range(len(self.phase_lists))]
-        return self.get_state()  # this should be gone
+        self.phase_logs = [[] for phase in range(len(self.phase_lists))]
+        # return self.get_state()  # this should be gone
 
     def step(self, next_phase, intersection_index):
         if self.acyclic:
@@ -99,9 +99,9 @@ class CityFlowEnv:
         # Assuming the last intersection_id is used.
         if intersection_index == len(self.intersection_ids) - 1:
             self.eng.next_step()
+            # # Environment gives back the next_state and reward.
+            # return self.get_state(intersection_index), self.get_reward(intersection_index)
 
-        # Environment gives back the next_state and reward.
-        return self.get_state(intersection_index), self.get_reward(intersection_index)
 
     # # Only works with TIM method
     # def step_cyclic(self, switch):

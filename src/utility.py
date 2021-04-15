@@ -142,6 +142,7 @@ def setup_config(scenario, mode, time=0, lr=0, batch_size=0, rm_size=0, learn_ev
     config['distance_added'] = distance_added
     config['speed_added'] = speed_added
     config['acyclic'] = args.acyclic
+    config['multi_agent'] = args.multi_agent
 
     if config['scenario'] == "LA_1x4":
         config['intersection_indices'] = [0, 8, 11, 17]

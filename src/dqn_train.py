@@ -17,13 +17,13 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-TENSORBOARD = 0
+TENSORBOARD = 1
 LOAD = 0  # Set to 1 to load checkpoint
 EPS_START = 1
 EPS_END = 0.1
 EPS_END_PERCENTAGE = 0.1
 GAMMA = 0.99  # discount factor (Should be same as in agent file)
-STATS_EVERY = 1
+STATS_EVERY = 50
 
 args = parse_arguments()
 
@@ -50,20 +50,22 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
                  distance_added, speed_added)
     env_val = CityFlowEnv(config_val)
 
-    intersection_id = list(config_val['lane_phase_info'].keys())[0]
-    phase_list = config_val['lane_phase_info'][intersection_id]['phase']
-    if config['acyclic']:
-        action_size = len(phase_list)
-    else:
-        action_size = 2
-    state_size = len(env_val.reset())
+    # intersection_id = list(config_val['lane_phase_info'].keys())[0]
+    # phase_list = config_val['lane_phase_info'][intersection_id]['phase']
     best_travel_time_train = np.ones(len(args.scenarios_train)) * 1000000
     best_travel_time_val = 100000
     starting_trajectory = 0
     eps = EPS_START
     data_set_index = 0
 
-    agent = Agent(state_size, action_size, 0, lr, batch_size, rm_size,
+    agents = [None for i in config['intersection_indices']]
+    for i, intersection_index in enumerate(config['intersection_indices']):
+        if config['acyclic']:
+            action_size = len(env_val.phase_lists[intersection_index])
+        else:
+            action_size = 2
+        state_size = len(env_val.get_state(intersection_index))
+        agents[i] = Agent(state_size, action_size, 0, lr, batch_size, rm_size,
                   learn_every)
 
     if TENSORBOARD:
@@ -78,9 +80,9 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
 
         # Perform training run through environment.
         if smdp:
-            run_env_smdp(agent, eps, config, env, "train")
+            run_env_smdp(agents, eps, config, env, "train")
         else:
-            run_env_mdp(agent, eps, config, env, "train")
+            run_env_mdp(agents, eps, config, env, "train")
 
         # Decrease epsilon.
         decay = (EPS_START - EPS_END) / ((n_trajactories - starting_trajectory) * EPS_END_PERCENTAGE)
@@ -95,10 +97,10 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
                 stats_train = []
                 # Perform evaluation run through environment on this training scenario.
                 if smdp:
-                    stats_one_training_run = run_env_smdp(agent, 0, config_train[i], envs_train[i], "eval")
+                    stats_one_training_run = run_env_smdp(agents, 0, config_train[i], envs_train[i], "eval")
                     stats_train.append(stats_one_training_run)
                 else:
-                    stats_one_training_run = run_env_mdp(agent, 0, config_train[i], envs_train[i], "eval")
+                    stats_one_training_run = run_env_mdp(agents, 0, config_train[i], envs_train[i], "eval")
                     stats_train.append(stats_one_training_run)
 
                 # Save logs of best run on this training scenario.
@@ -112,26 +114,28 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
 
             # Get validation stats.
             if smdp:
-                stats_val = run_env_smdp(agent, 0, config_val, env_val, "eval")
+                stats_val = run_env_smdp(agents, 0, config_val, env_val, "eval")
             else:
-                stats_val = run_env_mdp(agent, 0, config_val, env_val, "eval")
+                stats_val = run_env_mdp(agents, 0, config_val, env_val, "eval")
 
             # Save best model on validation set.
             if stats_val['travel_time'] < best_travel_time_val:
                 print('BEST VAL\n')
                 path = "{}/trained_models/{}/{}".format(args.output_dir, args.exp_name, config['hyperparams'])
-                torch.save({
-                    'stats': stats_train,
-                    'model_state_dict': agent.qnetwork_local.state_dict(),
-                    'optimizer_state_dict': agent.optimizer.state_dict(),
-                }, os.path.join(path, "checkpoint.tar"))
+                for i, agent in enumerate(agents):
+                    path = path + "/checkpoint" + str(i) + ".tar"
+                    torch.save({
+                        # 'stats': stats_train,
+                        'model_state_dict': agent.qnetwork_local.state_dict(),
+                        'optimizer_state_dict': agent.optimizer.state_dict(),
+                    }, path)
                 env_val.log()
                 best_travel_time_val = stats_val['travel_time']
 
             # Evaluate the maximum Q values on a fixed set of random states.
             if config['smdp'] == 1 and config['speed_added'] == 0 and config['acyclic'] == 1 and config['waiting_added'] == 1\
-                    and config['distance_added'] == 1 and config['num_step'] == 3600:
-                average_max_qvals = eval_fixed_states(agent, 0, config)
+                    and config['distance_added'] == 1 and config['num_step'] == 3600 and config['multi_agent'] == 0:
+                average_max_qvals = eval_fixed_states(agents[0], 0, config)
             else:
                 average_max_qvals = 0
 
@@ -143,9 +147,9 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
                 writer.add_scalar('LR', lr, trajectory)
                 writer.add_scalar('Average Reward', average_reward_training_set / config['num_step'], trajectory)
                 writer.add_scalar('Average Max Q Value', average_max_qvals, trajectory)
-                for name, weight in agent.qnetwork_local.named_parameters():
+                for name, weight in agents[0].qnetwork_local.named_parameters():
                     writer.add_histogram(name + '_qnetwork_local', weight, trajectory)
-                for name, weight in agent.qnetwork_target.named_parameters():
+                for name, weight in agents[0].qnetwork_target.named_parameters():
                     writer.add_histogram(name + '_qnetwork_target', weight, trajectory)
 
             # Print out stats in terminal.
@@ -168,12 +172,24 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
     config_test = setup_config(args.scenario_test, 'test', time, lr, batch_size, rm_size, learn_every, smdp, waiting_added,
                  distance_added, speed_added)
     env_test = CityFlowEnv(config_test)
-    agent_test = Agent(state_size, action_size, seed=0)
-    path = "{}/trained_models/{}/{}/checkpoint.tar".format(args.output_dir, args.exp_name, config['hyperparams'])
-    checkpoint = torch.load(path)
-    agent_test.qnetwork_local.load_state_dict(checkpoint['model_state_dict'])
 
-    stats_test = run_env_smdp(agent_test, 0, config_test, env_test, "eval")
+    agents_test = [None for i in config['intersection_indices']]
+    for i, intersection_index in enumerate(config['intersection_indices']):
+        if config['acyclic']:
+            action_size = len(env_val.phase_lists[intersection_index])
+        else:
+            action_size = 2
+        state_size = len(env_val.get_state(intersection_index))
+        agents_test[i] = Agent(state_size, action_size, seed=0)
+        path = "{}/trained_models/{}/{}/checkpoint{}.tar".format(args.output_dir, args.exp_name, config['hyperparams'], i)
+        checkpoint = torch.load(path)
+        agents_test[i].qnetwork_local.load_state_dict(checkpoint['model_state_dict'])
+
+    if smdp:
+        stats_test = run_env_smdp(agents_test, 0, config_test, env_test, "eval")
+    else:
+        stats_test = run_env_mdp(agents_test, 0, config_test, env_test, "eval")
+
     env_test.log()
     if TENSORBOARD:
         writer.add_scalar('Average Travel Time Test', stats_test['travel_time'], 0)
@@ -194,12 +210,12 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
         writer.close()
 
 
-def run_env_smdp(agent, eps, config, env, mode=None):
+def run_env_smdp(agents, eps, config, env, mode=None):
     """Run 1 episode through environment.
 
     Params
     ======
-        agent (Agent): the DQN agent to train
+        agents (Agent): the DQN agents to train
         eps (float): value of epsilon for epsilon-greedy action selection
         config (json): configuration file to setup the CityFlow engine
         env (CityFlowEnv): CityFlow environment
@@ -207,58 +223,75 @@ def run_env_smdp(agent, eps, config, env, mode=None):
     """
     stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0},
              'travel_time': 0}
+    env.reset()
 
-    t = 0
-    state = env.reset()
-
-    # lijsten van 4
-    if config['acyclic']:
-        last_action, _ = agent.act(state, eps)
-    else:
-        last_action = 0
-
-    while t < config['num_step']:
-        # for lloop
-        #lijst van 4
-        action, _ = agent.act(state, eps)
-
-        # Take step in environment, add yellow light if action changes.
-        if action == last_action:
-            next_state, reward = env.step(action)
-        else:
-            reward = 0
-            counter = 0
-            for _ in range(env.yellow_time):
-                _, sub_reward = env.step(-1)  # action -1 -> yellow light
-                reward += sub_reward * GAMMA ** counter
-                stats['actions'][-1] += 1
-                t += 1
-                counter += 1
-
-                # Break out of the training loop when training steps is reached.
-                flag = (t >= config['num_step'])
-                if flag:
-                    break
-            if flag:
-                break
-            next_state, sub_reward = env.step(action)
-            reward += sub_reward * GAMMA ** counter
-
-        # Add to replay buffer and train.
-        if mode == "train":
-            agent.step(state, action, reward, next_state)
-
-        # Save evaluation stats.
-        if mode == "eval":
-            stats['actions'][action] += 1
-            stats['rewards'] += reward
-
-        state = next_state
+    # Initialize the last_actions array, to check if new action is same or different, and add yellow light accordingly.
+    last_actions = [0 for i in agents]
+    for i, agent in enumerate(agents):
+        state = env.get_state(env.intersection_indices[i])
         if config['acyclic']:
-            last_action = action
+            last_actions[i], _ = agent.act(state, eps)
         else:
-            last_action = 0
-        t += 1
+            last_actions[i] = 0
+
+    actions = [0 for i in agents]
+    yellow_light_rewards = [0 for i in agents]
+    yellow_light_counters = [0 for i in env.intersection_indices]
+    for t in range(config['num_step']):
+
+        # Choose an action at every intersection.
+        for i, intersection_index in enumerate(env.intersection_indices):
+            state = env.get_state(env.intersection_indices[i])
+
+            # If light is not on yellow, make an action and check if light switches or not.
+            # If it switches, perform that action only after yellow time is finished.
+            if yellow_light_counters[i] == 0:
+                actions[i], _ = agents[i].act(state, eps)
+                if actions[i] == last_actions[i]:
+                    env.step(actions[i], intersection_index)
+                else:
+                    env.step(-1, intersection_index)
+            elif 0 < yellow_light_counters[i] < env.yellow_time:
+                env.step(-1, intersection_index)
+            elif yellow_light_counters[i] == env.yellow_time:
+                env.step(actions[i], intersection_index)
+
+        # When all agents have chosen their action, record their rewards and next states.
+        for i, intersection_index in enumerate(env.intersection_indices):
+
+            # If light is not on yellow, check if light switches.
+            # If it switches, record all the subrewards it gets during yellow period.
+            if yellow_light_counters[i] == 0:
+                if actions[i] == last_actions[i]:
+                    reward = env.get_reward(intersection_index)
+                else:
+                    sub_reward = env.get_reward(intersection_index)
+                    yellow_light_rewards[i] = sub_reward
+                    yellow_light_counters[i] += 1
+                    continue  # Makes sure the agent is not training during yellow time.
+            elif 0 < yellow_light_counters[i] < env.yellow_time:
+                sub_reward = env.get_reward(intersection_index)
+                yellow_light_rewards[i] += sub_reward * GAMMA ** yellow_light_counters[i]
+                yellow_light_counters[i] += 1
+                continue  # Makes sure the agent is not training during yellow time.
+            elif yellow_light_counters[i] == env.yellow_time:
+                sub_reward = env.get_reward(intersection_index)
+                reward = yellow_light_rewards[i] + sub_reward * GAMMA ** yellow_light_counters[i]
+                yellow_light_counters[i] = 0
+
+            next_state = env.get_state(env.intersection_indices[i])
+            # Add to replay buffer and train.
+            if mode == "train":
+                agents[i].step(state, actions[i], reward, next_state)
+
+            # Save evaluation stats.
+            if mode == "eval":
+                stats['rewards'] += reward
+
+            if config['acyclic']:
+                last_actions[i] = actions[i]
+            else:
+                last_actions[i] = 0
 
     stats['travel_time'] = env.get_average_travel_time()
     return stats
