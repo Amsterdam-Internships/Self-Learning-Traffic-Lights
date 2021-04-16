@@ -17,7 +17,7 @@ under the current epsilon-greedy policy of the trained agent.
 Source: https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda
 """
 
-TENSORBOARD = 0
+TENSORBOARD = 1
 LOAD = 0  # Set to 1 to load checkpoint
 EPS_START = 1
 EPS_END = 0.1
@@ -210,7 +210,7 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
         writer.close()
 
 
-def run_env_smdp(agents, eps, config, env, mode=None):
+def run_env_smdp2(agents, eps, config, env, mode=None):
     """Run 1 episode through environment.
 
     Params
@@ -226,9 +226,10 @@ def run_env_smdp(agents, eps, config, env, mode=None):
     env.reset()
 
     agent = agents[0]
+    intersection_index = 0
 
     # Initialize the last_actions array, to check if new action is same or different, and add yellow light accordingly.
-    state = env.get_state(env.intersection_indices[0])
+    state = env.get_state(env.intersection_indices[intersection_index])
     if config['acyclic']:
         last_action, _ = agent.act(state, eps)
     else:
@@ -240,8 +241,7 @@ def run_env_smdp(agents, eps, config, env, mode=None):
     for t in range(config['num_step']):
 
         # Choose an action at every intersection.
-        state = env.get_state(env.intersection_indices[0])
-        intersection_index = 0
+        # state = env.get_state(env.intersection_indices[0])
 
         # If light is not on yellow, make an action and check if light switches or not.
         # If it switches, perform that action only after yellow time is finished.
@@ -286,10 +286,99 @@ def run_env_smdp(agents, eps, config, env, mode=None):
             if mode == "eval":
                 stats['rewards'] += reward
 
+            state = next_state
             if config['acyclic']:
                 last_action = action
             else:
                 last_action = 0
+
+    stats['travel_time'] = env.get_average_travel_time()
+    return stats
+
+
+def run_env_smdp(agents, eps, config, env, mode=None):
+    """Run 1 episode through environment.
+
+    Params
+    ======
+        agents (Agent): the DQN agents to train
+        eps (float): value of epsilon for epsilon-greedy action selection
+        config (json): configuration file to setup the CityFlow engine
+        env (CityFlowEnv): CityFlow environment
+        mode (string): agent only takes step on 'train' mode
+    """
+    stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0},
+             'travel_time': 0}
+    env.reset()
+
+    # Initialize the last_actions array, to check if new action is same or different, and add yellow light accordingly.
+    last_actions = [0 for i in agents]
+    states = [[] for i in agents]
+    for i, agent in enumerate(agents):
+        states[i] = env.get_state(env.intersection_indices[i])
+        if config['acyclic']:
+            last_actions[i], _ = agent.act(states[i], eps)
+        else:
+            last_actions[i] = 0
+
+    actions = [0 for i in agents]
+    yellow_light_rewards = [0 for i in agents]
+    yellow_light_counters = [0 for i in agents]
+    for t in range(config['num_step']):
+
+        # Choose an action at every intersection.
+        for i, intersection_index in enumerate(env.intersection_indices):
+
+            # If light is not on yellow, make an action and check if light switches or not.
+            # If it switches, perform that action only after yellow time is finished.
+            if yellow_light_counters[i] == 0:
+                actions[i], _ = agents[i].act(states[i], eps)
+                if actions[i] == last_actions[i]:
+                    env.step(actions[i], intersection_index)
+                else:
+                    env.step(-1, intersection_index)
+            elif 0 < yellow_light_counters[i] < env.yellow_time:
+                env.step(-1, intersection_index)
+            elif yellow_light_counters[i] == env.yellow_time:
+                env.step(actions[i], intersection_index)
+
+        # When all agents have chosen their action, record their rewards and next states.
+        for i, intersection_index in enumerate(env.intersection_indices):
+
+            # If light is not on yellow, check if light switches.
+            # If it switches, record all the subrewards it gets during yellow period.
+            if yellow_light_counters[i] == 0:
+                if actions[i] == last_actions[i]:
+                    reward = env.get_reward(intersection_index)
+                else:
+                    sub_reward = env.get_reward(intersection_index)
+                    yellow_light_rewards[i] = sub_reward
+                    yellow_light_counters[i] += 1
+            elif 0 < yellow_light_counters[i] < env.yellow_time:
+                sub_reward = env.get_reward(intersection_index)
+                yellow_light_rewards[i] += sub_reward * GAMMA ** yellow_light_counters[i]
+                yellow_light_counters[i] += 1
+            elif yellow_light_counters[i] == env.yellow_time:
+                sub_reward = env.get_reward(intersection_index)
+                reward = yellow_light_rewards[i] + sub_reward * GAMMA ** yellow_light_counters[i]
+                yellow_light_counters[i] = 0
+
+            if yellow_light_counters[i] == 0:
+                next_state = env.get_state(env.intersection_indices[i])
+                # Add to replay buffer and train.
+                if mode == "train":
+                    agents[i].step(states[i], actions[i], reward, next_state)
+
+                # Save evaluation stats.
+                if mode == "eval":
+                    stats['rewards'] += reward
+
+                if config['acyclic']:
+                    last_actions[i] = actions[i]
+                else:
+                    last_actions[i] = 0
+
+                states[i] = next_state
 
     stats['travel_time'] = env.get_average_travel_time()
     return stats
@@ -362,95 +451,6 @@ def run_env_smdp3(agents, eps, config, env, mode=None):
         else:
             last_action = 0
         t += 1
-
-    stats['travel_time'] = env.get_average_travel_time()
-    return stats
-
-
-def run_env_smdp2(agent, eps, config, env, mode=None):
-    """Run 1 episode through environment.
-
-    Params
-    ======
-        agents (Agent): the DQN agents to train
-        eps (float): value of epsilon for epsilon-greedy action selection
-        config (json): configuration file to setup the CityFlow engine
-        env (CityFlowEnv): CityFlow environment
-        mode (string): agent only takes step on 'train' mode
-    """
-    stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0},
-             'travel_time': 0}
-    env.reset()
-
-    agents = [agent]
-
-    # Initialize the last_actions array, to check if new action is same or different, and add yellow light accordingly.
-    last_actions = [0 for i in agents]
-    for i, agent in enumerate(agents):
-        state = env.get_state(env.intersection_indices[i])
-        if config['acyclic']:
-            last_actions[i], _ = agent.act(state, eps)
-        else:
-            last_actions[i] = 0
-
-    actions = [0 for i in agents]
-    yellow_light_rewards = [0 for i in agents]
-    yellow_light_counters = [0 for i in env.intersection_indices]
-    for t in range(config['num_step']):
-
-        # Choose an action at every intersection.
-        for i, intersection_index in enumerate(env.intersection_indices):
-            state = env.get_state(env.intersection_indices[i])
-
-            # If light is not on yellow, make an action and check if light switches or not.
-            # If it switches, perform that action only after yellow time is finished.
-            if yellow_light_counters[i] == 0:
-                actions[i], _ = agents[i].act(state, eps)
-                if actions[i] == last_actions[i]:
-                    env.step(actions[i], intersection_index)
-                else:
-                    env.step(-1, intersection_index)
-            elif 0 < yellow_light_counters[i] < env.yellow_time:
-                env.step(-1, intersection_index)
-            elif yellow_light_counters[i] == env.yellow_time:
-                env.step(actions[i], intersection_index)
-
-        # When all agents have chosen their action, record their rewards and next states.
-        for i, intersection_index in enumerate(env.intersection_indices):
-
-            # If light is not on yellow, check if light switches.
-            # If it switches, record all the subrewards it gets during yellow period.
-            if yellow_light_counters[i] == 0:
-                if actions[i] == last_actions[i]:
-                    reward = env.get_reward(intersection_index)
-                else:
-                    sub_reward = env.get_reward(intersection_index)
-                    yellow_light_rewards[i] = sub_reward
-                    yellow_light_counters[i] += 1
-                    continue  # Makes sure the agent is not training during yellow time.
-            elif 0 < yellow_light_counters[i] < env.yellow_time:
-                sub_reward = env.get_reward(intersection_index)
-                yellow_light_rewards[i] += sub_reward * GAMMA ** yellow_light_counters[i]
-                yellow_light_counters[i] += 1
-                continue  # Makes sure the agent is not training during yellow time.
-            elif yellow_light_counters[i] == env.yellow_time:
-                sub_reward = env.get_reward(intersection_index)
-                reward = yellow_light_rewards[i] + sub_reward * GAMMA ** yellow_light_counters[i]
-                yellow_light_counters[i] = 0
-
-            next_state = env.get_state(env.intersection_indices[i])
-            # Add to replay buffer and train.
-            if mode == "train":
-                agents[i].step(state, actions[i], reward, next_state)
-
-            # Save evaluation stats.
-            if mode == "eval":
-                stats['rewards'] += reward
-
-            if config['acyclic']:
-                last_actions[i] = actions[i]
-            else:
-                last_actions[i] = 0
 
     stats['travel_time'] = env.get_average_travel_time()
     return stats
