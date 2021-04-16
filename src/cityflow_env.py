@@ -67,9 +67,9 @@ class CityFlowEnv:
     def reset(self):
         self.eng.reset()
         self.phase_logs = [[] for phase in range(len(self.phase_lists))]
-        # return self.get_state()  # this should be gone
+        return self.get_state()  # Only use when single agent.
 
-    def step(self, next_phase, intersection_index):
+    def step(self, next_phase, intersection_index=0):
         if self.acyclic:
             if self.current_phases[intersection_index] == next_phase:
                 self.current_phase_times[intersection_index] += 1
@@ -99,8 +99,9 @@ class CityFlowEnv:
         # Assuming the last intersection_id is used.
         if intersection_index == len(self.intersection_ids) - 1:
             self.eng.next_step()
-            # # Environment gives back the next_state and reward.
-            # return self.get_state(intersection_index), self.get_reward(intersection_index)
+
+        # Environment gives back the next_state and reward.
+        return self.get_state(), self.get_reward()  # Only use when single agent.
 
 
     # # Only works with TIM method
@@ -127,7 +128,7 @@ class CityFlowEnv:
     #     # Environment gives back the next_state and reward.
     #     return self.get_state(), self.get_reward()
 
-    def get_state(self, intersection_index):
+    def get_state(self, intersection_index=0):
 
         lane_vehicle_count = [self.eng.get_lane_vehicle_count()[lane]/self.ALL_VEHICLES_MAX for lane in self.start_lanes[intersection_index]]
 
@@ -228,7 +229,7 @@ class CityFlowEnv:
                  'current_phase_time': self.current_phase_time}
         return state
 
-    def get_reward(self, intersection_index):
+    def get_reward(self, intersection_index=0):
         # lane_waiting_vehicle_count = self.eng.get_lane_waiting_vehicle_count()
         # reward = -1 * sum(list(lane_waiting_vehicle_count.values()))
         lane_waiting_vehicle_count = [self.eng.get_lane_waiting_vehicle_count()[lane] for lane in self.start_lanes[intersection_index]]
