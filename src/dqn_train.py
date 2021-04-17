@@ -23,7 +23,7 @@ EPS_START = 1
 EPS_END = 0.1
 EPS_END_PERCENTAGE = 0.1
 GAMMA = 0.99  # discount factor (Should be same as in agent file)
-STATS_EVERY = 50
+STATS_EVERY = 10
 
 args = parse_arguments()
 
@@ -123,12 +123,12 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
                 print('BEST VAL\n')
                 path = "{}/trained_models/{}/{}".format(args.output_dir, args.exp_name, config['hyperparams'])
                 for i, agent in enumerate(agents):
-                    path = path + "/checkpoint" + str(i) + ".tar"
+                    path_specific = path + "/checkpoint" + str(i) + ".tar"
                     torch.save({
                         # 'stats': stats_train,
                         'model_state_dict': agent.qnetwork_local.state_dict(),
                         'optimizer_state_dict': agent.optimizer.state_dict(),
-                    }, path)
+                    }, path_specific)
                 env_val.log()
                 best_travel_time_val = stats_val['travel_time']
 
@@ -208,92 +208,6 @@ def dqn(n_trajactories, time, lr, batch_size, rm_size, learn_every, smdp, waitin
     if TENSORBOARD:
         writer.flush()
         writer.close()
-
-
-def run_env_smdp2(agents, eps, config, env, mode=None):
-    """Run 1 episode through environment.
-
-    Params
-    ======
-        agents (Agent): the DQN agents to train
-        eps (float): value of epsilon for epsilon-greedy action selection
-        config (json): configuration file to setup the CityFlow engine
-        env (CityFlowEnv): CityFlow environment
-        mode (string): agent only takes step on 'train' mode
-    """
-    stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0},
-             'travel_time': 0}
-    env.reset()
-
-    agent = agents[0]
-    intersection_index = 0
-
-    # Initialize the last_actions array, to check if new action is same or different, and add yellow light accordingly.
-    state = env.get_state(env.intersection_indices[intersection_index])
-    if config['acyclic']:
-        last_action, _ = agent.act(state, eps)
-    else:
-        last_action = 0
-
-    action = 0
-    yellow_light_reward = 0
-    yellow_light_counter = 0
-    for t in range(config['num_step']):
-
-        # Choose an action at every intersection.
-        # state = env.get_state(env.intersection_indices[0])
-
-        # If light is not on yellow, make an action and check if light switches or not.
-        # If it switches, perform that action only after yellow time is finished.
-        if yellow_light_counter == 0:
-            action, _ = agent.act(state, eps)
-            if action == last_action:
-                env.step(action, intersection_index)
-            else:
-                env.step(-1, intersection_index)
-        elif 0 < yellow_light_counter < env.yellow_time:
-            env.step(-1, intersection_index)
-        elif yellow_light_counter == env.yellow_time:
-            env.step(action, intersection_index)
-
-        # If light is not on yellow, check if light switches.
-        # If it switches, record all the subrewards it gets during yellow period.
-        if yellow_light_counter == 0:
-            if action == last_action:
-                reward = env.get_reward(intersection_index)
-            else:
-                sub_reward = env.get_reward(intersection_index)
-                yellow_light_reward = sub_reward
-                yellow_light_counter += 1
-                # continue  # Makes sure the agent is not training during yellow time.
-        elif 0 < yellow_light_counter < env.yellow_time:
-            sub_reward = env.get_reward(intersection_index)
-            yellow_light_reward += sub_reward * GAMMA ** yellow_light_counter
-            yellow_light_counter += 1
-            # continue  # Makes sure the agent is not training during yellow time.
-        elif yellow_light_counter == env.yellow_time:
-            sub_reward = env.get_reward(intersection_index)
-            reward = yellow_light_reward + sub_reward * GAMMA ** yellow_light_counter
-            yellow_light_counter = 0
-
-        if yellow_light_counter == 0:
-            next_state = env.get_state(env.intersection_indices[0])
-            # Add to replay buffer and train.
-            if mode == "train":
-                agent.step(state, action, reward, next_state)
-
-            # Save evaluation stats.
-            if mode == "eval":
-                stats['rewards'] += reward
-
-            state = next_state
-            if config['acyclic']:
-                last_action = action
-            else:
-                last_action = 0
-
-    stats['travel_time'] = env.get_average_travel_time()
-    return stats
 
 
 def run_env_smdp(agents, eps, config, env, mode=None):
@@ -379,78 +293,6 @@ def run_env_smdp(agents, eps, config, env, mode=None):
                     last_actions[i] = 0
 
                 states[i] = next_state
-
-    stats['travel_time'] = env.get_average_travel_time()
-    return stats
-
-
-def run_env_smdp3(agents, eps, config, env, mode=None):
-    """Run 1 episode through environment.
-
-    Params
-    ======
-        agent (Agent): the DQN agent to train
-        eps (float): value of epsilon for epsilon-greedy action selection
-        config (json): configuration file to setup the CityFlow engine
-        env (CityFlowEnv): CityFlow environment
-        mode (string): agent only takes step on 'train' mode
-    """
-    stats = {'rewards': 0, 'actions': {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0},
-             'travel_time': 0}
-
-    agent = agents[0]
-
-    t = 0
-    state = env.reset()
-
-    # lijsten van 4
-    if config['acyclic']:
-        last_action, _ = agent.act(state, eps)
-    else:
-        last_action = 0
-
-    while t < config['num_step']:
-        # for lloop
-        #lijst van 4
-        action, _ = agent.act(state, eps)
-
-        # Take step in environment, add yellow light if action changes.
-        if action == last_action:
-            next_state, reward = env.step(action)
-        else:
-            reward = 0
-            counter = 0
-            for _ in range(env.yellow_time):
-                _, sub_reward = env.step(-1)  # action -1 -> yellow light
-                reward += sub_reward * GAMMA ** counter
-                stats['actions'][-1] += 1
-                t += 1
-                counter += 1
-
-                # Break out of the training loop when training steps is reached.
-                flag = (t >= config['num_step'])
-                if flag:
-                    break
-            if flag:
-                break
-            next_state, sub_reward = env.step(action)
-            reward += sub_reward * GAMMA ** counter
-
-        # Add to replay buffer and train.
-        if mode == "train":
-            agent.step(state, action, reward, next_state)
-
-        # Save evaluation stats.
-        if mode == "eval":
-            stats['actions'][action] += 1
-            stats['rewards'] += reward
-
-        state = next_state
-        if config['acyclic']:
-            last_action = action
-        else:
-            last_action = 0
-        t += 1
 
     stats['travel_time'] = env.get_average_travel_time()
     return stats
