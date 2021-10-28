@@ -15,14 +15,15 @@ to subsequently be trained with the newly created data.
 
 Relevance: with the recent advances in reinforcement learning and the increasement of traffic data, it is natural to wonder whether traffic networks can be optimized by machine learning to improve mobility and CO2 emission.
 
-Approach: Multi-Agent Deep Reinforcement Learning with one agent per intersection.
+Approach: Deep Reinforcement Learning with one agent controling one intersection.
 
-Data: real-world traffic flow data virtually simulated in the CityFlow Simulator .
+Data: real-world traffic flow data virtually simulated in the CityFlow Simulator.
 
-Contributions: revisiting the fundamental framework of Adaptive Traffic Signal Control to apply reinforcement learning techniques to.
+Contributions: revisiting the fundamental framework of Adaptive Traffic Signal Control for reinforcement learning approaches.
 - State: what traffic input is necessary, without being abundant, to maximize rewards?
 - Actions: what actions does the agent have at its proposal?
 - Markov Decision Process: at what timesteps does the agent perform an action?
+- Reward: what constitutes a bad or good action?
 
 
 ---
@@ -87,27 +88,17 @@ pip install .
 
 ## Usage
 
-To see the results of our method compared to the baseline methods:
-```bash
-python compare.py --scenario hangzou1
-```
-
-If you want to train the model with, for example, a state representation containing the number of waiting vehicles, approaching vehicles, and their distance, using an acyclic phase order:
+To train the model with, for example, a state representation containing the number of waiting vehicles, approaching vehicles, and their distance, using an acyclic phase order, run:
 ```bash
 python src/tuning.py --waiting --distance --acyclic
 ```
 
 If you want to try your own state representation, you can update [`cityflow_env.py`](./src/cityflow_env.py).  
 
-If you want to compare your signal plan with ours, you can run compare.py on a specific dataset with the path to your signal_plan_template.txt
-
-```bash
-python compare.py --scenario hangzou1 --signal_path 'example/example_signal_template.txt'
-```
+If you want to compare your signal plan with ours, you can run evaluate.py on a specific dataset with the path to your signal_plan_template.txt, [`evaluate.py`](./src/evaluate.py). 
 
 ---
 
 ## Acknowledgements
 
 Sample code has been used of the Traffic Signal Control Competition [TSCC2019](https://github.com/tianrang-intelligence/TSCC2019) and https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda.
-(Add links and check whether the authors have explicitly stated citation preference for using the DOI or citing a paper or so.)
