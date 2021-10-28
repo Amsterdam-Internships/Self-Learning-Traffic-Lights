@@ -3,7 +3,7 @@ Sierk Kanis' master thesis Artificial Intelligence at the University of Amsterda
 
 ![](media/traffic.png)
 
-The aim of this project is to improve the traffic flow of Amsterdam to increase its mobility and decrease its CO2 emission. One way to realise this is by decreasing the waiting time of traffic in front of traffic lights. 
+The aim of this project was to improve the traffic flow of Amsterdam to increase its mobility and decrease its CO2 emission. One way to realise this is by decreasing the waiting time of traffic in front of traffic lights. 
 Sensor data can be used to simulate the traffic within a virtual simulation environment,
 by which the configuration of traffic lights can be optimised by Reinforcement Learning techniques. 
 If the performance of the intelligently trained traffic lights surpasses a certain baseline, they can be applied and evaluated in real-life, 
@@ -38,6 +38,8 @@ Contributions: revisiting the fundamental framework of Adaptive Traffic Signal C
 ---
 
 ## Results
+
+Our RLight agent outperforms the rule-based algorithm SOTL by a substantial margin of at least 34% on all five intersections of the Hangzhou dataset despite incorporating almost no prior knowledge about traffic flows.
 
 ![alt text](https://github.com/Amsterdam-Internships/Self-Learning-Traffic-Lights/blob/workinprogress/media/videos/compare.gif)
 
