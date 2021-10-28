@@ -98,7 +98,7 @@ python src/tuning.py --waiting --distance --acyclic
 
 If you want to try your own state representation, you can update [`cityflow_env.py`](./src/cityflow_env.py).  
 
-If you want to compare your signal plan with ours, you can run evaluate.py on a specific dataset with the path to your signal_plan_template.txt, [`evaluate.py`](./src/evaluate.py). 
+If you want to compare your signal plan with ours, you can run [`evaluate.py`](./src/evaluate.py) on a specific dataset with the path to your signal_plan_template.txt. 
 
 ---
 
