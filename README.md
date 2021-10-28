@@ -1,13 +1,12 @@
 # Self-Learning-Traffic-Lights
-Sierk Kanis' master thesis Artificial Intelligence at the University of Amsterdam as intern at the municipality of Amsterdam. 
+
+Welcome to the github page of Back to Basics: Deep Reinforcement Learning in Traffic Signal Control, published at UrbComp 2021 (http://urban-computing.com/urbcomp2021/file/UrbComp2021_Full_Kanis.pdf).
+
 
 ![](media/traffic.png)
 
-The aim of this project was to improve the traffic flow of Amsterdam to increase its mobility and decrease its CO2 emission. One way to realise this is by decreasing the waiting time of traffic in front of traffic lights. 
-Sensor data can be used to simulate the traffic within a virtual simulation environment,
-by which the configuration of traffic lights can be optimised by Reinforcement Learning techniques. 
-If the performance of the intelligently trained traffic lights surpasses a certain baseline, they can be applied and evaluated in real-life, 
-to subsequently be trained with the newly created data.
+The aim of this project was to improve the traffic flow of Amsterdam to increase its mobility and decrease its CO2 emission. One way to realise this is by decreasing the waiting time of traffic in front of traffic lights. Sensor data can be used to simulate the traffic within a virtual simulation environment,
+by which the configuration of traffic lights can be optimised by Reinforcement Learning techniques. Ultimately, if the performance of the intelligently trained traffic lights surpasses a certain baseline, they can be applied and evaluated in real-life, to subsequently be trained with the newly created real-life data.
 
 ---
 
@@ -19,12 +18,14 @@ Approach: Deep Reinforcement Learning with one agent controling one intersection
 
 Data: real-world traffic flow data virtually simulated in the CityFlow Simulator.
 
-Contributions: revisiting the fundamental framework of Adaptive Traffic Signal Control for reinforcement learning approaches.
+Contributions: revisiting the fundamental framework of Adaptive Traffic Signal Control for reinforcement learning approaches. This concerns the following questions:
 - State: what traffic input is necessary, without being abundant, to maximize rewards?
 - Actions: what actions does the agent have at its proposal?
 - Markov Decision Process: at what timesteps does the agent perform an action?
-- Reward: what constitutes a bad or good action?
+- Reward: what constitutes a good or bad action?
 
+In addition, the rule-based algorithm SOTL was extented to work in an acyclic fashion for multi-phase intersections as well as in the originally implemented
+two-phase setting.
 
 ---
 
@@ -102,5 +103,6 @@ If you want to compare your signal plan with ours, you can run evaluate.py on a 
 ---
 
 ## Acknowledgements
+The work was conducted as a master thesis Artificial Intelligence at the University of Amsterdam as intern at the municipality of Amsterdam. 
 
 Sample code has been used of the Traffic Signal Control Competition [TSCC2019](https://github.com/tianrang-intelligence/TSCC2019) and https://medium.com/@unnatsingh/deep-q-network-with-pytorch-d1ca6f40bfda.
